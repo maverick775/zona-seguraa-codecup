@@ -1,0 +1,301 @@
+Zona SeguRAA – System Overview
+MVP CodeCup 2026 | Modalidad: Seguridad y Bienestar
+Versión: 1.0 — Sprint kickoffFecha: 19 de marzo de 2026Equipo: Erick Martínez Villa (Tech Lead / Hardware), + Dev TeamRepositorio: github.com/maverick775/zona-seguraa-codecupEntorno: Vercel + Supabase CloudDominio: zonaseguraa.com / zonaseguraaa.mx
+1. Visión del Producto
+Zona SeguRAA es un ecosistema de seguridad comunitaria inteligente que combina una red de dispositivos IoT LoRaWAN con una plataforma web de gestión de alertas en tiempo real. Para el Hackathon CodeCup 2026, construimos el MVP funcional demostrando el flujo completo de respuesta a emergencias en el Estadio Akron durante el Mundial de Fútbol 2026.
+Propuesta de valor central del MVP:Un visitante extranjero activa una alerta de emergencia médica desde la app en su idioma → la comunidad presente valida el reporte en tiempo real con comentarios contextuales → el coordinador de seguridad gestiona la respuesta desde el dashboard → el dispositivo físico AVP3 activa señales luminosas/sonoras en la zona. Todo el flujo es medible en segundos.
+2. Escenario de Demostración
+Historia: Dos turistas extranjeros asisten al Estadio Akron. Uno pierde el conocimiento en las gradas. Su acompañante abre la app, selecciona idioma inglés, activa el botón de pánico con tipo "Medical Emergency", e ingresa su ubicación (fila y asiento).
+El reporte aparece en el dashboard traducido al español. Otros espectadores cercanos notan la alerta activa en la app y validan votando, agregando comentarios ("Row 5, Seat 14, person is unconscious"). Al acumularse 3 votos, la alerta escala automáticamente a Nivel 2. El coordinador de seguridad asigna el estatus EN ATENCIÓN desde el dashboard, lo cual activa señales en el nodo físico AVP3 de la zona correspondiente.
+KPI visible durante la demo:
+⏱️ Tiempo de respuesta: 42 segundos desde activación hasta EN ATENCIÓN
+3. Arquitectura del Sistema
+┌─────────────────────────────────────────────────────────────────┐
+│ CAPA DE PRESENTACIÓN │
+│ │
+│ [Web App - Next.js] [Dashboard - Next.js] │
+│ Visitante / Comunidad Coordinador de Seguridad │
+│ zonaseguraa.com/app zonaseguraa.com/dashboard │
+│ │ │ │
+│ └──────────────┬────────────────┘ │
+│ │ HTTPS / REST API │
+└────────────────────────┼────────────────────────────────────────┘
+│
+┌────────────────────────┼────────────────────────────────────────┐
+│ CAPA DE BACKEND │
+│ │
+│ [Next.js API Routes - Vercel Serverless] │
+│ /api/alerts /api/votes /api/nodes /api/users │
+│ │ │ │
+│ │ [Supabase Realtime] │
+│ │ WebSocket subscriptions │
+│ │ │ │
+│ [Supabase PostgreSQL] │ │
+│ alerts, votes, nodes, │ │
+│ users_temp, zones │ │
+└────────────────────────┼────────────────────────────────────────┘
+│
+┌────────────────────────┼────────────────────────────────────────┐
+│ CAPA IoT / HARDWARE │
+│ │
+│ [Loriot Network Server] │
+│ Webhook → POST /api/iot/uplink │
+│ │ │
+│ [Milesight UG63 Gateway] │
+│ LoRaWAN US915 Sub-band 2 │
+│ │ │
+│ ┌─────┴──────────────────────┐ │
+│ │ │ │
+│ [AVP3-ALFA] [Terminal Portátil] │
+│ Pico 2 RP2350 Heltec LoRa32 │
+│ RFM95W SPI WiFi+BLE+OLED │
+│ Strobo + Sirena Botón pánico físico │
+│ (Nodo fijo) (Dispositivo portátil) │
+└─────────────────────────────────────────────────────────────────┘
+4. Stack Tecnológico
+Capa
+Tecnología
+Justificación
+Frontend
+Next.js 14 (App Router), JavaScript
+Routing, SSR y API routes en un solo repo; JS puro sin overhead de TS
+Estilos
+Tailwind CSS
+Velocidad de prototipado; sin setup de CSS personalizado
+Mapa
+Leaflet.js + OpenStreetMap
+Open source, sin API key; overlay de imagen del estadio
+Realtime
+Supabase Realtime (WebSocket)
+Suscripciones de DB en tiempo real sin WebSocket server propio
+Base de datos
+Supabase PostgreSQL
+Free tier generoso; SQL directo desde el cliente o API routes
+Auth
+Supabase Auth (coordinadores) + custom (visitantes)
+Auth out-of-the-box para coordinadores; alias temporal para visitantes
+Deploy
+Vercel
+git push → live en <60 segundos; dominio personalizado gratis
+IoT bridge
+Loriot → Webhook → /api/iot/uplink
+Loriot es grado comercial; webhook enruta a la misma API de Next.js
+Hardware
+Arduino IDE + MCCI-LMIC (Pico 2), Heltec Arduino (LoRa32)
+Librerías maduras con OTAA LoRaWAN
+5. Modelo de Datos
+5.1 Tablas principales
+-- Zonas de cobertura
+zones (
+id uuid PRIMARY KEY,
+name text, -- "Estadio Akron - Zona A"
+description text,
+city text, -- "Guadalajara"
+created_at timestamp
+)
+-- Nodos IoT (físicos y simulados)
+nodes (
+id uuid PRIMARY KEY,
+zone_id uuid REFERENCES zones,
+name text, -- "AVP3-Alfa-01"
+type text, -- 'avp_physical' | 'avp_simulated' | 'medical_point' | 'exit'
+x float, -- posición en mapa estático (% del ancho)
+y float, -- posición en mapa estático (% del alto)
+lorawan_eui text, -- DevEUI si es nodo físico, null si simulado
+status text, -- 'online' | 'offline' | 'alert'
+last_seen_at timestamp
+)
+-- Alertas
+alerts (
+id uuid PRIMARY KEY,
+zone_id uuid REFERENCES zones,
+node_id uuid REFERENCES nodes,
+type text, -- 'medical' | 'security' | 'evacuation'
+level int, -- 1 | 2 | 3
+status text, -- 'active' | 'in_progress' | 'resolved' | 'false_alarm'
+description text,
+language text, -- idioma del reporte original ('en' | 'es')
+created_by_nick text,
+created_at timestamp,
+updated_at timestamp,
+resolved_at timestamp,
+attended_by uuid REFERENCES users_coord
+)
+-- Votos y comentarios de la comunidad
+alert_votes (
+id uuid PRIMARY KEY,
+alert_id uuid REFERENCES alerts,
+nickname text,
+role text, -- 'visitor' | 'coordinator'
+weight int, -- visitor=1, coordinator=2
+comment text,
+created_at timestamp
+)
+-- Usuarios temporales (visitantes)
+users_temp (
+id uuid PRIMARY KEY,
+nickname text UNIQUE,
+zone_id uuid REFERENCES zones,
+language text,
+created_at timestamp,
+expires_at timestamp -- now() + interval '1 hour'
+)
+-- Coordinadores de seguridad
+users_coord (
+id uuid PRIMARY KEY,
+email text UNIQUE,
+role text DEFAULT 'coordinator',
+created_at timestamp
+-- password gestionado por Supabase Auth
+)
+-- Log de uplinks IoT (para debug y trazabilidad)
+iot_uplinks (
+id uuid PRIMARY KEY,
+node_eui text,
+payload_hex text,
+alert_state int,
+battery_pct int,
+received_at timestamp
+)
+5.2 Reglas de negocio
+Escalada automática a Nivel 2: SUM(alert_votes.weight) >= 3 sobre una alerta activa dispara level = 2.
+Nivel 3: Solo coordinadores pueden escalar; activa notificación de evacuación en nodos.
+Expiración de usuarios temporales: Job de Supabase (pg_cron) o limpieza lazy al registrar nuevos.
+Downlink al AVP: Al cambiar alerts.status = 'in_progress', el backend publica downlink vía API de Loriot al node.lorawan_eui correspondiente.
+6. Máquina de Estados de la Alerta
+[Visitante / App]
+│
+Botón de pánico
+│
+▼
+┌─────────────┐
+│ NIVEL 1 │ ← Alerta creada
+│ (ACTIVA) │
+└─────┬───────┘
+│ ≥3 votos
+│ OR 1 voto coordinador
+▼
+┌─────────────┐
+│ NIVEL 2 │ ← Validada comunidad
+│ (VALIDADA) │ AVP: Strobo lento
+└─────┬───────┘
+│ Coordinador
+│ escala
+▼
+┌─────────────┐
+│ NIVEL 3 │ ← Crítico / Evacuación
+│ (CRÍTICO) │ AVP: Sirena + Strobo
+└─────┬───────┘
+│ Coordinador
+│ atiende
+▼
+┌─────────────┐
+│ EN │ ← Coordinador asignado
+│ ATENCIÓN │ AVP: Strobo continuo
+└─────┬───────┘
+│ Coordinador
+│ resuelve
+▼
+┌─────────────┐
+│ RESUELTA │ ← Incidente cerrado
+└─────────────┘ AVP: vuelve a NORMAL
+7. Rutas de la Aplicación
+Ruta
+Descripción
+Rol
+/
+Landing page con QR y descripción de la zona
+Público
+/join
+Registro de visitante temporal (alias + idioma)
+Público
+/zone/[id]
+Vista de zona: mapa, alertas activas, botón de pánico
+Visitante
+/alert/new
+Formulario de nueva alerta (tipo, descripción, ubicación)
+Visitante
+/alert/[id]
+Detalle de alerta: votos, comentarios, estado
+Visitante
+/coordinator/login
+Login de coordinador
+—
+/coordinator/dashboard
+Dashboard principal con mapa + cola de alertas
+Coordinador
+/coordinator/alert/[id]
+Gestión de alerta: cambio de estado, downlink
+Coordinador
+/api/alerts
+CRUD de alertas
+API
+/api/votes
+Crear voto / comentario
+API
+/api/nodes
+Estado de nodos
+API
+/api/users/temp
+Registro visitante temporal
+API
+/api/iot/uplink
+Webhook receptor de Loriot
+API
+/api/iot/downlink
+Enviar comando al AVP vía Loriot
+API
+8. Infraestructura de Deploy
+Vercel (Frontend + API)
+Repositorio GitHub → Push a main → Vercel auto-deploy
+Preview URLs por cada PR → QA rápido sin bloquearse
+Variables de entorno en Vercel dashboard:
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+LORIOT_API_KEY
+LORIOT_DOWNLINK_URL
+Supabase
+Proyecto: zona-seguraa-codecup
+Region: us-east-1 (menor latencia desde México)
+Plan: Free tier (suficiente para demo)
+Row Level Security: habilitado en production
+Realtime: habilitado en tabla alerts y nodes
+Dominio
+zonaseguraa.com → apunta a Vercel deployment
+zonaseguraa.com/app → ruta visitante
+zonaseguraa.com/dashboard → ruta coordinador
+9. Plan de Contingencia (Wizard of Oz)
+Si el hardware IoT falla durante la presentación, el sistema opera en Modo Demo:
+Script scripts/demo-mode.js ejecutable manualmente.
+Genera la secuencia completa de eventos vía llamadas directas a /api/alerts y /api/votes, simulando el flujo exacto del escenario del extranjero.
+El dashboard muestra exactamente el mismo comportamiento visual que con el hardware real.
+Los dispositivos físicos quedan como props visuales (ya tienen el firmware cargado y pueden mostrar estados en OLED).
+Activación: node scripts/demo-mode.js --zone akron --scenario medical
+10. Definition of Done (DoD) del MVP
+Los siguientes criterios, si se cumplen, garantizan una demo exitosa independientemente de todo lo demás:
+DoD-1: URL pública zonaseguraa.com/zone/akron carga el mapa del Estadio Akron con nodos marcados en <3 segundos.
+DoD-2: Un visitante puede registrarse con alias, activar una alerta de emergencia médica y ver confirmación en <10 segundos.
+DoD-3: El estado de la alerta cambia visiblemente en el dashboard del coordinador en tiempo real al recibir votos de la comunidad.
+DoD-4: El coordinador puede cambiar el estado de una alerta a EN ATENCIÓN y el cambio se refleja en el dashboard sin recargar la página.
+DoD-5: El historial de eventos registra cada transición con timestamp correcto.
+DoD-6 (opcional): Un uplink del AVP físico actualiza el estado del nodo correspondiente en el mapa en <15 segundos.
+11. Equipo y Responsabilidades
+Área
+Responsable
+Scope
+Tech Lead / Hardware
+Erick Martínez Villa
+Arquitectura general, firmware AVP3, integración Loriot, coordinación demo
+Frontend Dev
+Dev 1
+Vistas visitante, zona, alerta, formularios, mapa Leaflet
+Backend Dev
+Dev 2
+API routes, modelos Supabase, lógica de estados, webhook Loriot
+Dashboard Dev
+Dev 1 o Dev 2
+Vista coordinador, tiempo real, acciones de gestión
+Demo & Contingency
+Todo el equipo
+Script Wizard of Oz, ensayo, QR codes, presentación

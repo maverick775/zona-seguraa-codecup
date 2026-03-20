@@ -1,0 +1,20 @@
+{
+  "module_id": "communities",
+  "route": "/communities",
+  "screen_name": "Comunidades",
+  "contract_version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "breaking_change": false,
+  "owners": { "fe": "FE Team", "be": "BE Team" },
+  "entities": ["communities", "alerts"],
+  "endpoint_ids": ["communities-list", "communities-join", "alerts-list"],
+  "ui_contract": {
+    "tabs": ["all", "nearby", "member", "allies"],
+    "card_fields": ["name", "safety_status", "present_count", "capacity", "active_alerts"],
+    "role_badges": ["admin", "ally", "visitor"]
+  },
+  "integration_checks": [
+    "rol visitante limita acceso a alertas nivel 1",
+    "boton unirme respeta visibilidad de comunidad"
+  ]
+}

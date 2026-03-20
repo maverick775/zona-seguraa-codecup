@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "zones": {
+      "primary_key": "id",
+      "required_fields": ["slug", "name", "city", "active"],
+      "notes": "Define la zona publica operativa"
+    },
+    "communities": {
+      "primary_key": "id",
+      "required_fields": ["zone_id", "slug", "name", "visibility", "safety_status", "role_required"],
+      "enums": {
+        "visibility": ["public", "member", "restricted"],
+        "safety_status": ["calm", "monitoring", "active_alert"],
+        "role_required": ["visitor", "ally", "admin"]
+      }
+    },
+    "nodes": {
+      "primary_key": "id",
+      "required_fields": ["zone_id", "name", "type", "status", "pos_x", "pos_y"],
+      "enums": {
+        "type": ["avp_physical", "avp_simulated", "medical_point", "exit", "emergency_exit", "meeting_point"],
+        "status": ["online", "offline", "alert", "in_progress", "maintenance"]
+      }
+    },
+    "alerts": {
+      "primary_key": "id",
+      "required_fields": ["zone_id", "type", "level", "status", "description", "created_by_nick"],
+      "enums": {
+        "type": ["security", "medical", "fire", "evacuation", "other"],
+        "status": ["active", "validated", "in_progress", "resolved", "false_alarm", "cancelled"],
+        "level": [1, 2, 3, 4]
+      }
+    },
+    "alert_votes": {
+      "primary_key": "id",
+      "required_fields": ["alert_id", "nickname", "role", "weight"],
+      "enums": {
+        "role": ["visitor", "ally", "coordinator"]
+      }
+    },
+    "users_temp": {
+      "primary_key": "id",
+      "required_fields": ["nickname", "zone_id", "language", "expires_at"],
+      "enums": {
+        "language": ["es", "en"]
+      }
+    },
+    "users_coord": {
+      "primary_key": "id",
+      "required_fields": ["email", "role"],
+      "enums": {
+        "role": ["coordinator", "admin"]
+      }
+    },
+    "iot_uplinks": {
+      "primary_key": "id",
+      "required_fields": ["node_eui", "payload_hex", "alert_state", "received_at"]
+    }
+  }
+}

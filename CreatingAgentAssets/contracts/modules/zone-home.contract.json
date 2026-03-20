@@ -1,0 +1,38 @@
+{
+  "module_id": "zone-home",
+  "route": "/zone/[slug]",
+  "screen_name": "Zona + boton SOS + acciones rapidas",
+  "contract_version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "breaking_change": false,
+  "owners": { "fe": "FE Team", "be": "BE Team" },
+  "entities": ["zones", "nodes", "alerts", "communities"],
+  "endpoint_ids": ["zones-get", "nodes-list", "alerts-list", "communities-list"],
+  "ui_contract": {
+    "sos": {
+      "activation": "long_press_3s",
+      "max_visible_time_ms": 1000
+    },
+    "accessibility": ["high_contrast", "tts_text", "vibration_scale"],
+    "levels": {
+      "1": "Bajo/amarillo",
+      "2": "Medio/naranja",
+      "3": "Alto/rojo",
+      "4": "Critico/rojo+estrobo"
+    },
+    "palette_tokens": [
+      "--primary-teal",
+      "--emergency-red",
+      "--admin-purple",
+      "--ally-blue",
+      "--bg-light",
+      "--text-dark",
+      "--text-muted",
+      "--border-light"
+    ]
+  },
+  "integration_checks": [
+    "carga nodos y alertas en tiempo real",
+    "mensaje calmante visible en alertas altas: Respira y sigue instrucciones"
+  ]
+}

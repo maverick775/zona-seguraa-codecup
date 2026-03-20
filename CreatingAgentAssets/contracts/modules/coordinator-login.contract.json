@@ -1,0 +1,19 @@
+{
+  "module_id": "coordinator-login",
+  "route": "/coordinator/login",
+  "screen_name": "Login coordinador",
+  "contract_version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "breaking_change": false,
+  "owners": { "fe": "FE Team", "be": "BE Team" },
+  "entities": ["users_coord"],
+  "endpoint_ids": ["coordinator-login"],
+  "ui_contract": {
+    "required_fields": ["email", "password"],
+    "success_redirect": "/coordinator/dashboard"
+  },
+  "integration_checks": [
+    "token se almacena de forma segura",
+    "rutas coordinator bloqueadas sin sesion"
+  ]
+}

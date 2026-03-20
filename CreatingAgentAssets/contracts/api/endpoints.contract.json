@@ -1,0 +1,223 @@
+{
+  "contract_name": "zona-seguraa-api",
+  "version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "base_path": "/api",
+  "endpoints": [
+    {
+      "endpoint_id": "users-temp-create",
+      "method": "POST",
+      "path": "/users/temp",
+      "request": {
+        "required": ["nickname", "zone_slug", "language"],
+        "schema": {
+          "nickname": "string(3..32)",
+          "zone_slug": "string",
+          "language": "enum[es,en]",
+          "accessibility_profile": "object(optional)"
+        }
+      },
+      "response": {
+        "success": "201 { id, nickname, zone_id, expires_at }",
+        "errors": ["409 nickname_in_use", "422 invalid_payload"]
+      }
+    },
+    {
+      "endpoint_id": "zones-get",
+      "method": "GET",
+      "path": "/zones/{slug}",
+      "request": {
+        "required": ["slug"],
+        "schema": {
+          "slug": "string"
+        }
+      },
+      "response": {
+        "success": "200 { id, slug, name, city, active }",
+        "errors": ["404 zone_not_found"]
+      }
+    },
+    {
+      "endpoint_id": "nodes-list",
+      "method": "GET",
+      "path": "/nodes?zone_slug={slug}",
+      "request": {
+        "required": ["zone_slug"],
+        "schema": {
+          "zone_slug": "string"
+        }
+      },
+      "response": {
+        "success": "200 [{ id, name, type, status, pos_x, pos_y, lat, lng }]"
+      }
+    },
+    {
+      "endpoint_id": "alerts-create",
+      "method": "POST",
+      "path": "/alerts",
+      "request": {
+        "required": ["zone_id", "type", "level", "description", "created_by_nick"],
+        "schema": {
+          "zone_id": "uuid",
+          "community_id": "uuid(optional)",
+          "node_id": "uuid(optional)",
+          "type": "enum[security,medical,fire,evacuation,other]",
+          "level": "int[1..4]",
+          "description": "string",
+          "language": "enum[es,en]",
+          "created_by_nick": "string"
+        }
+      },
+      "response": {
+        "success": "201 { id, level, status, created_at }",
+        "errors": ["422 invalid_payload"]
+      }
+    },
+    {
+      "endpoint_id": "alerts-list",
+      "method": "GET",
+      "path": "/alerts?zone_slug={slug}&status={status}",
+      "request": {
+        "required": ["zone_slug"],
+        "schema": {
+          "zone_slug": "string",
+          "status": "enum(optional)[active,validated,in_progress,resolved,false_alarm,cancelled]"
+        }
+      },
+      "response": {
+        "success": "200 [{ id, type, level, status, validation_ratio, created_at }]"
+      }
+    },
+    {
+      "endpoint_id": "alerts-get",
+      "method": "GET",
+      "path": "/alerts/{id}",
+      "request": {
+        "required": ["id"],
+        "schema": {
+          "id": "uuid"
+        }
+      },
+      "response": {
+        "success": "200 { id, votes, timeline, recommendations }",
+        "errors": ["404 alert_not_found"]
+      }
+    },
+    {
+      "endpoint_id": "alerts-patch",
+      "method": "PATCH",
+      "path": "/alerts/{id}",
+      "request": {
+        "required": ["id"],
+        "schema": {
+          "id": "uuid",
+          "status": "enum[validated,in_progress,resolved,false_alarm,cancelled]",
+          "level": "int(optional)[1..4]",
+          "coordinator_note": "string(optional)"
+        }
+      },
+      "response": {
+        "success": "200 { id, status, level, updated_at }",
+        "errors": ["401 unauthorized", "403 coordinator_required", "404 alert_not_found"]
+      }
+    },
+    {
+      "endpoint_id": "votes-create",
+      "method": "POST",
+      "path": "/votes",
+      "request": {
+        "required": ["alert_id", "nickname", "role"],
+        "schema": {
+          "alert_id": "uuid",
+          "nickname": "string",
+          "role": "enum[visitor,ally,coordinator]",
+          "comment": "string(optional)"
+        }
+      },
+      "response": {
+        "success": "201 { id, weight, alert_level, validation_ratio }",
+        "notes": "Escala de nivel se activa cuando validation_ratio >= 0.60"
+      }
+    },
+    {
+      "endpoint_id": "communities-list",
+      "method": "GET",
+      "path": "/communities?zone_slug={slug}",
+      "request": {
+        "required": ["zone_slug"],
+        "schema": {
+          "zone_slug": "string",
+          "tab": "enum(optional)[all,nearby,member,allies]"
+        }
+      },
+      "response": {
+        "success": "200 [{ id, name, safety_status, role_required, present_count, capacity }]"
+      }
+    },
+    {
+      "endpoint_id": "communities-join",
+      "method": "POST",
+      "path": "/communities/{id}/members",
+      "request": {
+        "required": ["id", "nickname"],
+        "schema": {
+          "id": "uuid",
+          "nickname": "string"
+        }
+      },
+      "response": {
+        "success": "200 { community_id, member_role }",
+        "errors": ["403 access_limited", "404 community_not_found"]
+      }
+    },
+    {
+      "endpoint_id": "coordinator-login",
+      "method": "POST",
+      "path": "/coordinator/login",
+      "request": {
+        "required": ["email", "password"],
+        "schema": {
+          "email": "email",
+          "password": "string"
+        }
+      },
+      "response": {
+        "success": "200 { access_token, refresh_token, expires_in }",
+        "errors": ["401 invalid_credentials"]
+      }
+    },
+    {
+      "endpoint_id": "iot-uplink",
+      "method": "POST",
+      "path": "/iot/uplink",
+      "request": {
+        "required": ["EUI", "data"],
+        "schema": {
+          "EUI": "string",
+          "data": "hex",
+          "rssi": "number(optional)",
+          "snr": "number(optional)"
+        }
+      },
+      "response": {
+        "success": "200 { ok: true }"
+      }
+    },
+    {
+      "endpoint_id": "iot-downlink",
+      "method": "POST",
+      "path": "/iot/downlink",
+      "request": {
+        "required": ["device_eui", "command"],
+        "schema": {
+          "device_eui": "string",
+          "command": "enum[normal,validated,critical,in_progress,resolved]"
+        }
+      },
+      "response": {
+        "success": "200 { ok: true, provider: loriot }",
+        "errors": ["422 invalid_command", "502 provider_error"]
+      }
+    }
+  ]
+}

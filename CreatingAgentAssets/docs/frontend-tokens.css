@@ -1,0 +1,17 @@
+:root {
+  --primary-teal: #2b7a78;
+  --emergency-red: #e63946;
+  --admin-purple: #a020f0;
+  --ally-blue: #3a86ff;
+  --bg-light: #f8f9fa;
+  --text-dark: #1d1d1f;
+  --text-muted: #6c757d;
+  --border-light: #e9ecef;
+
+  --alert-low: #f2c94c;
+  --alert-medium: #f2994a;
+  --alert-high: #e63946;
+  --alert-critical: #e63946;
+}
+
+/* Guideline: base UI should calm users, alert overlays should increase urgency without panic copy. */

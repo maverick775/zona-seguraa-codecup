@@ -1,0 +1,282 @@
+Zona SeguRAA – Sprint Plan
+CodeCup 2026 | Hackathon Express · 2 Sprints en 48h
+Metodología: Agile Express (sprints de ~12h)Herramienta sugerida: GitHub Projects o Notion BoardStory Points: 1 SP ≈ 30 minutos de trabajo enfocadoDefinición de Ready: Historia con criterios de aceptación claros antes de iniciarDefinición de Done: Feature deployada en Vercel preview, probada en navegador
+Épicas del MVP
+ID
+Épica
+Descripción
+E1
+Foundation
+Setup del repo, entorno, DB, deploy pipeline
+E2
+Visitor Flow
+Registro temporal, botón de pánico, formulario de alerta
+E3
+Community Validation
+Vista de alerta, votos, comentarios, escalada automática
+E4
+Coordinator Dashboard
+Mapa Leaflet, cola de alertas, gestión de estados
+E5
+Realtime
+Suscripciones Supabase, actualizaciones sin recarga
+E6
+IoT Bridge
+Webhook Loriot, API uplink, downlink al AVP
+E7
+Demo Readiness
+Script Wizard of Oz, seed data, QRs, ensayo
+Sprint 0 — Setup (Hoy Jue 19, 3:00 PM → 6:00 PM · ~3h)
+Goal: Repositorio funcional con deploy en Vercel, Supabase configurado y todos los devs con acceso.
+ID
+Historia de Usuario
+Tareas
+SP
+Responsable
+S0-1
+Como dev, quiero el repositorio y el proyecto de Next.js inicializado
+npx create-next-app zona-seguraa --js --tailwind --app; crear repo en GitHub; configurar .env.local; push inicial
+2
+Tech Lead
+S0-2
+Como dev, quiero el proyecto de Supabase creado con el esquema de DB
+Crear proyecto en supabase.com; ejecutar el SQL del esquema (zones, nodes, alerts, alert_votes, users_temp, users_coord, iot_uplinks); habilitar Realtime en alerts y nodes
+4
+Backend Dev
+S0-3
+Como dev, quiero el primer deploy en Vercel con dominio personalizado
+Conectar repo a Vercel; configurar variables de entorno; apuntar zonaseguraa.com a Vercel; verificar deploy
+2
+Tech Lead
+S0-4
+Como dev, quiero los datos seed para la demo
+Insertar zona akron, 8 nodos (1 físico + 7 simulados con coordenadas en el estadio), 2 usuarios coordinadores
+2
+Backend Dev
+S0-5
+Como dev, quiero la instalación de dependencias del proyecto
+npm install @supabase/supabase-js leaflet react-leaflet; crear cliente Supabase en lib/supabase.js
+1
+Cualquier dev
+Sprint 0 Velocity objetivo: 11 SP · Duración: ~3h
+Sprint 1 — Core MVP (Jue 19, 6:00 PM → Vie 20, 6:00 AM · ~12h)
+Goal: El flujo completo visitante → alerta → votos → dashboard funciona end-to-end. Deployado en producción.
+Épica E1: API Routes (Backend)
+ID
+Historia de Usuario
+Criterios de Aceptación
+Tareas
+SP
+S1-B1
+Como sistema, quiero una API para crear y consultar alertas
+POST /api/alerts retorna 201 con la alerta creada; GET /api/alerts?zone_id=X retorna array de alertas
+Crear /api/alerts/route.js; validar campos; insertar en Supabase; retornar alerta
+3
+S1-B2
+Como sistema, quiero una API para registrar votos y comentarios
+POST /api/votes con {alert_id, nickname, comment} inserta voto; si la suma de pesos ≥3 actualiza alert.level = 2
+Crear /api/votes/route.js; lógica de escalada automática a nivel 2
+4
+S1-B3
+Como sistema, quiero una API para actualizar el estado de una alerta
+PATCH /api/alerts/[id] acepta {status, level}; solo coordinadores autenticados pueden usar esta ruta
+Crear /api/alerts/[id]/route.js; validar Supabase session del coordinador
+3
+S1-B4
+Como sistema, quiero registrar usuarios temporales
+POST /api/users/temp con {nickname, zone_id, language} crea usuario con expires_at = now + 1h; retorna 409 si nickname está en uso
+Crear /api/users/temp/route.js; verificar unicidad; insertar
+2
+S1-B5
+Como coordinador, quiero autenticarme con email y password
+POST /api/coordinator/login usa Supabase Auth; retorna session token; páginas de coordinador verifican el token
+Usar supabase.auth.signInWithPassword; middleware de protección en rutas /coordinator/*
+3
+Subtotal Backend: 15 SP
+Épica E2: Visitor Flow (Frontend)
+ID
+Historia de Usuario
+Criterios de Aceptación
+Tareas
+SP
+S1-F1
+Como visitante, quiero registrarme con alias e idioma sin necesidad de email
+Pantalla /join con campo nickname + selector ES/EN; al enviar crea usuario temporal y redirige a /zone/akron
+Crear app/join/page.js; formulario con validación; llamada a /api/users/temp; guardar session en localStorage
+3
+S1-F2
+Como visitante, quiero ver el mapa del estadio con los nodos marcados
+/zone/[id] muestra mapa Leaflet con imagen del Estadio Akron como tile layer o overlay; nodos con marcadores de color según estado
+Instalar react-leaflet; crear componente StadiumMap.js; cargar nodos desde Supabase; renderizar marcadores
+5
+S1-F3
+Como visitante, quiero activar el botón de pánico y crear una alerta
+Botón grande rojo "Necesito Ayuda / I Need Help" visible en la vista de zona; toca → formulario de 3 pasos; submit crea alerta y muestra confirmación
+Crear app/alert/new/page.js; formulario multistep: tipo de emergencia → descripción + ubicación → confirmación; llamada a /api/alerts
+5
+S1-F4
+Como visitante, quiero ver alertas activas en mi zona y poder votar
+Lista de alertas activas debajo del mapa; cada alerta tiene botón "Confirmar" + campo de comentario corto; al votar se actualiza el contador
+Crear componente AlertCard.js; llamada a /api/votes; actualización optimista del contador
+4
+Subtotal Visitor Flow: 17 SP
+Épica E3: Realtime
+ID
+Historia de Usuario
+Criterios de Aceptación
+Tareas
+SP
+S1-R1
+Como visitante y coordinador, quiero que las alertas se actualicen en tiempo real sin recargar
+Usar supabase.channel().on('postgres_changes') en tabla alerts; nuevas alertas y cambios de estado aparecen instantáneamente
+Crear hook useRealtimeAlerts(zone_id) con suscripción a Supabase Realtime; usar en /zone/[id] y /coordinator/dashboard
+5
+S1-R2
+Como coordinador, quiero que el estado de los nodos se actualice en tiempo real
+Cambios en nodes.status se reflejan en el color del marcador del mapa sin recargar
+Crear hook useRealtimeNodes(zone_id); suscribirse a tabla nodes; actualizar estado local del mapa
+3
+Subtotal Realtime: 8 SP
+Sprint 1 Total: 40 SP · Duración: ~12hDeploy check: Al final del sprint, flujo visitante → alerta → votos debe funcionar en zonaseguraa.com
+Sprint 2 — Dashboard, IoT & Demo Polish (Vie 20, 6:00 AM → 2:00 PM · ~8h)
+Goal: Dashboard de coordinador funcional, integración Loriot, script de contingencia listo. Todo ensayado.
+Épica E4: Coordinator Dashboard
+ID
+Historia de Usuario
+Criterios de Aceptación
+Tareas
+SP
+S2-D1
+Como coordinador, quiero un dashboard con mapa y cola de alertas en tiempo real
+/coordinator/dashboard muestra mapa con nodos + panel lateral con lista de alertas ordenadas por created_at desc; se actualiza en realtime
+Crear app/coordinator/dashboard/page.js; layout split: mapa izquierda + panel derecha; integrar hooks de realtime
+6
+S2-D2
+Como coordinador, quiero ver el detalle de una alerta y gestionar su estado
+Al hacer click en alerta del panel: abre detalle con votos, comentarios, tiempo transcurrido; botones: "En Atención", "Resolver", "Escalar Nivel 3"
+Crear app/coordinator/alert/[id]/page.js; llamadas a /api/alerts/[id] con PATCH; feedback visual de acción exitosa
+5
+S2-D3
+Como coordinador, quiero ver el KPI de tiempo de respuesta en segundos
+En el detalle de la alerta: cronómetro visible desde created_at; al marcar EN ATENCIÓN se detiene y muestra "Tiempo de respuesta: Xs" en grande
+Crear componente ResponseTimer.js con setInterval; detener y mostrar en verde al cambiar status
+3
+S2-D4
+Como coordinador, quiero ver el conteo de usuarios activos en la zona
+Widget en dashboard con número de users_temp activos (no expirados) para la zona; se actualiza cada 30s
+Query a Supabase count con filtro expires_at > now() y zone_id; polling cada 30s
+2
+Subtotal Dashboard: 16 SP
+Épica E6: IoT Bridge
+ID
+Historia de Usuario
+Criterios de Aceptación
+Tareas
+SP
+S2-I1
+Como sistema, quiero recibir uplinks del AVP3 desde Loriot
+POST /api/iot/uplink recibe el payload de Loriot; extrae alert_state y battery_pct del payload hex; actualiza nodes.status y crea/actualiza alerta si alert_state > 0
+Crear /api/iot/uplink/route.js; parsear payload 2 bytes; lógica de creación de alerta; configurar URL del webhook en consola Loriot
+5
+S2-I2
+Como coordinador, quiero enviar un downlink al AVP para confirmar atención
+Al marcar alerta EN ATENCIÓN, si el nodo tiene lorawan_eui, el backend hace POST a Loriot API para enviar downlink 0x02 al dispositivo
+Agregar lógica de downlink en PATCH /api/alerts/[id]; llamada a https://us1.loriot.io/app/{appid}/node/{eui}/dl con las credenciales Loriot
+4
+Subtotal IoT: 9 SP
+Épica E7: Demo Readiness
+ID
+Historia de Usuario
+Criterios de Aceptación
+Tareas
+SP
+S2-W1
+Como equipo, queremos un script de modo demo (Wizard of Oz)
+node scripts/demo-mode.js ejecuta la secuencia completa: crea visitante temporal → activa alerta médica → genera 3 votos con comentarios → pausa 5s → coordinador marca EN ATENCIÓN → pausa 10s → marca RESUELTA
+Crear scripts/demo-mode.js con fetch secuencial a las API routes; --delay flag configurable; mensajes de log descriptivos en cada paso
+4
+S2-W2
+Como equipo, queremos QR codes para el registro de visitantes
+QR que apunta a zonaseguraa.com/join?zone=akron; listo para imprimir y para mostrar en pantalla durante la presentación
+Generar con qrcode npm package o servicio online; exportar PNG de alta resolución; incluir en slide de presentación
+1
+S2-W3
+Como equipo, queremos seed data con nodos simulados del estadio
+Mapa del estadio muestra 7+ nodos simulados con posiciones realistas (gradas Norte, Sur, Este, Oeste, Zona Médica, Salida Principal, Salida de Emergencia); 1 nodo marcado como AVP físico
+Actualizar script SQL de seed; coordenadas x/y en % relativas al overlay de la imagen del estadio
+2
+S2-W4
+Como equipo, queremos un ensayo completo del flujo de demo
+Ejecutar el escenario completo 3 veces: 2 con hardware real, 1 con script Wizard of Oz; medir y documentar tiempos de respuesta; ajustar cualquier bug visual
+Sesión de prueba de 1h; lista de bugs; fixes rápidos; documentar "42 segundos" de tiempo de respuesta real para citar en presentación
+3
+Subtotal Demo Readiness: 10 SP
+Sprint 2 Total: 35 SP · Duración: ~8h
+Backlog Diferido (Post-CodeCup)
+Estas historias fueron identificadas pero quedan fuera del scope del MVP:
+ID
+Historia
+Razón de diferimiento
+BL-1
+Red Mesh secundaria 433MHz (SX1278)
+Requiere firmware adicional complejo; no agrega valor diferencial en la demo
+BL-2
+Auto-traducción en tiempo real con API de IA
+Latencia y costo; en MVP el texto multilenguaje se maneja con texto de demostración pre-escrito
+BL-3
+Mapa dinámico con GPS real en los dispositivos
+Hardware no tiene GPS; coordenadas hardcodeadas son suficientes para el escenario
+BL-4
+Recuperación de contraseña para coordinadores
+No es necesaria para el concurso; coordinadores son pre-creados
+BL-5
+Push notifications (SMS/WhatsApp)
+Requiere integración con Twilio/WhatsApp Business API; fuera del tiempo disponible
+BL-6
+App móvil nativa iOS/Android
+El web responsive en móvil es suficiente para la demo
+BL-7
+Integración con C5 Jalisco
+En proceso de negociación; roadmap post-CodeCup
+Resumen de Capacidad
+Sprint
+Duración
+Story Points
+Objetivo
+Sprint 0
+3h
+11 SP
+Setup completo, repo + DB + deploy
+Sprint 1
+12h
+40 SP
+Flujo visitante funcional end-to-end
+Sprint 2
+8h
+35 SP
+Dashboard + IoT + demo lista
+Total
+23h
+86 SP
+MVP completo antes del hackathon
+Ceremonies Express
+Ceremony
+Frecuencia
+Duración
+Formato
+Sprint Planning
+Inicio de cada sprint
+15 min
+Revisar historias, aclarar dudas, asignar responsables
+Sync check
+Cada 3h durante sprint activo
+5 min
+¿Hay bloqueos? ¿Algo para swap de prioridad?
+Sprint Review
+Final de cada sprint
+10 min
+Demo de lo construido, confirm DoD
+Demo Rehearsal
+Vie 20, 2:00 PM
+60 min
+Ensayo completo del escenario del extranjero

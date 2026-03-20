@@ -1,0 +1,21 @@
+{
+  "module_id": "alert-report",
+  "route": "/alert/new",
+  "screen_name": "Reporte de alerta",
+  "contract_version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "breaking_change": false,
+  "owners": { "fe": "FE Team", "be": "BE Team" },
+  "entities": ["alerts", "nodes", "zones"],
+  "endpoint_ids": ["alerts-create"],
+  "ui_contract": {
+    "required_fields": ["categoria", "nivel", "ubicacion"],
+    "optional_fields": ["descripcion"],
+    "category_options": ["security", "medical", "fire", "other"],
+    "level_slider": [1, 2, 3, 4]
+  },
+  "integration_checks": [
+    "alerta creada con status active",
+    "language heredado de sesion temporal"
+  ]
+}

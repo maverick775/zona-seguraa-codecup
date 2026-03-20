@@ -1,0 +1,294 @@
+-- ============================================================
+-- SEED DATA · Zona SeguRAA · Public Zone Scenario (MVP)
+-- Zona ejemplo: Parque Metropolitano, Zapopan (acceso libre)
+-- ============================================================
+
+-- ============================================================
+-- 1. ZONA
+-- ============================================================
+
+INSERT INTO zones (
+  id,
+  slug,
+  name,
+  description,
+  city,
+  active
+) VALUES (
+  'a2000000-0000-0000-0000-000000000001',
+  'parque-metropolitano',
+  'Parque Metropolitano - Zona Publica',
+  'Zona publica de libre acceso con flujo peatonal constante. Los usuarios reportan alertas y validan eventos comunitarios en tiempo real.',
+  'Zapopan',
+  true
+)
+ON CONFLICT (slug) DO UPDATE SET
+  name        = EXCLUDED.name,
+  description = EXCLUDED.description,
+  city        = EXCLUDED.city,
+  active      = EXCLUDED.active;
+
+
+-- ============================================================
+-- 2. COMUNIDADES (alineadas a wireframe)
+-- ============================================================
+
+INSERT INTO communities (
+  id,
+  zone_id,
+  slug,
+  name,
+  visibility,
+  safety_status,
+  ally_count,
+  present_count,
+  capacity,
+  unverified_alerts,
+  active_alerts,
+  role_required
+) VALUES
+  (
+    'c2000000-0000-0000-0000-000000000001',
+    'a2000000-0000-0000-0000-000000000001',
+    'residencial-los-pinos',
+    'Residencial Los Pinos',
+    'member',
+    'calm',
+    24,
+    87,
+    120,
+    2,
+    1,
+    'admin'
+  ),
+  (
+    'c2000000-0000-0000-0000-000000000002',
+    'a2000000-0000-0000-0000-000000000001',
+    'barrio-santa-fe',
+    'Barrio Santa Fe',
+    'public',
+    'monitoring',
+    18,
+    54,
+    100,
+    1,
+    2,
+    'ally'
+  ),
+  (
+    'c2000000-0000-0000-0000-000000000003',
+    'a2000000-0000-0000-0000-000000000001',
+    'zona-centro-historico',
+    'Zona Centro Historico',
+    'restricted',
+    'monitoring',
+    6,
+    29,
+    90,
+    1,
+    0,
+    'visitor'
+  )
+ON CONFLICT (slug) DO UPDATE SET
+  name              = EXCLUDED.name,
+  visibility        = EXCLUDED.visibility,
+  safety_status     = EXCLUDED.safety_status,
+  ally_count        = EXCLUDED.ally_count,
+  present_count     = EXCLUDED.present_count,
+  capacity          = EXCLUDED.capacity,
+  unverified_alerts = EXCLUDED.unverified_alerts,
+  active_alerts     = EXCLUDED.active_alerts,
+  role_required     = EXCLUDED.role_required;
+
+
+-- ============================================================
+-- 3. NODOS (8 total)
+-- pos_x/pos_y para overlay de mapa interno del parque
+-- ============================================================
+
+INSERT INTO nodes (
+  id,
+  zone_id,
+  community_id,
+  name,
+  type,
+  pos_x,
+  pos_y,
+  lat,
+  lng,
+  lorawan_eui,
+  status,
+  battery_pct,
+  last_seen_at
+) VALUES
+  (
+    'b2000000-0000-0000-0000-000000000001',
+    'a2000000-0000-0000-0000-000000000001',
+    'c2000000-0000-0000-0000-000000000001',
+    'AVP3-Alfa-Parque-01',
+    'avp_physical',
+    49.5,
+    51.0,
+    20.693120,
+    -103.429820,
+    'DUMMY-EUI-PARQUE-0001',
+    'online',
+    98,
+    NOW()
+  ),
+  (
+    'b2000000-0000-0000-0000-000000000002',
+    'a2000000-0000-0000-0000-000000000001',
+    'c2000000-0000-0000-0000-000000000002',
+    'Acceso Norte',
+    'avp_simulated',
+    50.0,
+    10.0,
+    20.695020,
+    -103.429900,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+  (
+    'b2000000-0000-0000-0000-000000000003',
+    'a2000000-0000-0000-0000-000000000001',
+    'c2000000-0000-0000-0000-000000000002',
+    'Acceso Sur',
+    'avp_simulated',
+    50.0,
+    92.0,
+    20.691220,
+    -103.429750,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+  (
+    'b2000000-0000-0000-0000-000000000004',
+    'a2000000-0000-0000-0000-000000000001',
+    'c2000000-0000-0000-0000-000000000001',
+    'Lago Central',
+    'meeting_point',
+    58.0,
+    46.0,
+    20.692980,
+    -103.428640,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+  (
+    'b2000000-0000-0000-0000-000000000005',
+    'a2000000-0000-0000-0000-000000000001',
+    'c2000000-0000-0000-0000-000000000002',
+    'Punto Medico Movil',
+    'medical_point',
+    30.0,
+    34.0,
+    20.693840,
+    -103.431250,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+  (
+    'b2000000-0000-0000-0000-000000000006',
+    'a2000000-0000-0000-0000-000000000001',
+    'c2000000-0000-0000-0000-000000000003',
+    'Foro Abierto',
+    'avp_simulated',
+    67.0,
+    36.0,
+    20.693560,
+    -103.427550,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+  (
+    'b2000000-0000-0000-0000-000000000007',
+    'a2000000-0000-0000-0000-000000000001',
+    'c2000000-0000-0000-0000-000000000002',
+    'Salida Principal',
+    'exit',
+    42.0,
+    96.0,
+    20.691050,
+    -103.430210,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+  (
+    'b2000000-0000-0000-0000-000000000008',
+    'a2000000-0000-0000-0000-000000000001',
+    'c2000000-0000-0000-0000-000000000003',
+    'Salida Emergencia Oriente',
+    'emergency_exit',
+    84.0,
+    18.0,
+    20.694670,
+    -103.426800,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  )
+ON CONFLICT (id) DO UPDATE SET
+  community_id = EXCLUDED.community_id,
+  name         = EXCLUDED.name,
+  type         = EXCLUDED.type,
+  pos_x        = EXCLUDED.pos_x,
+  pos_y        = EXCLUDED.pos_y,
+  lat          = EXCLUDED.lat,
+  lng          = EXCLUDED.lng,
+  lorawan_eui  = EXCLUDED.lorawan_eui,
+  status       = EXCLUDED.status,
+  battery_pct  = EXCLUDED.battery_pct,
+  last_seen_at = EXCLUDED.last_seen_at;
+
+
+-- ============================================================
+-- 4. COORDINADORES BASE
+-- ============================================================
+
+INSERT INTO users_coord (
+  id,
+  email,
+  role
+) VALUES
+  (
+    'd2000000-0000-0000-0000-000000000001',
+    'coordinator+zs01@zonaseguraa.com',
+    'coordinator'
+  ),
+  (
+    'd2000000-0000-0000-0000-000000000002',
+    'admin+zs01@zonaseguraa.com',
+    'admin'
+  )
+ON CONFLICT (email) DO UPDATE SET
+  role = EXCLUDED.role;
+
+
+-- ============================================================
+-- 5. VERIFICACION
+-- ============================================================
+SELECT z.slug AS zona, c.name AS comunidad, c.safety_status, c.role_required
+FROM communities c
+JOIN zones z ON z.id = c.zone_id
+WHERE z.slug = 'parque-metropolitano'
+ORDER BY c.name;
+
+SELECT n.name, n.type, n.status, n.pos_x, n.pos_y, COALESCE(n.lorawan_eui, 'simulado') AS eui
+FROM nodes n
+JOIN zones z ON z.id = n.zone_id
+WHERE z.slug = 'parque-metropolitano'
+ORDER BY n.name;

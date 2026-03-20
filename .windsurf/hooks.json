@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "pre_read_code": [
+      {
+        "command": "python .windsurf/scripts/enforce_scope.py"
+      }
+    ],
+    "pre_write_code": [
+      {
+        "command": "python .windsurf/scripts/enforce_scope.py"
+      }
+    ],
+    "pre_run_command": [
+      {
+        "command": "python .windsurf/scripts/enforce_scope.py"
+      }
+    ]
+  }
+}

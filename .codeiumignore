@@ -1,0 +1,6 @@
+CreatingAgentAssets/*.docx
+CreatingAgentAssets/*.png
+CreatingAgentAssets/*.extracted.txt
+zona-seguraa/node_modules/
+zona-seguraa/.next/
+zona-seguraa/package-lock.json

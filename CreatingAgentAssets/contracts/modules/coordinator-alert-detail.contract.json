@@ -1,0 +1,20 @@
+{
+  "module_id": "coordinator-alert-detail",
+  "route": "/coordinator/alert/[id]",
+  "screen_name": "Gestion de alerta coordinador",
+  "contract_version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "breaking_change": false,
+  "owners": { "fe": "FE Team", "be": "BE Team" },
+  "entities": ["alerts", "alert_votes", "iot_uplinks"],
+  "endpoint_ids": ["alerts-get", "alerts-patch", "iot-downlink"],
+  "ui_contract": {
+    "actions": ["mark_validated", "mark_in_progress", "mark_resolved", "mark_false_alarm"],
+    "critical_message": "Respira y sigue instrucciones",
+    "post_alert_summary": true
+  },
+  "integration_checks": [
+    "al marcar in_progress se intenta downlink al nodo",
+    "acciones quedan en timeline con timestamp"
+  ]
+}

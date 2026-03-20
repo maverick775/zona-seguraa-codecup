@@ -1,0 +1,19 @@
+{
+  "module_id": "landing",
+  "route": "/",
+  "screen_name": "Landing + selector de zona",
+  "contract_version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "breaking_change": false,
+  "owners": { "fe": "FE Team", "be": "BE Team" },
+  "entities": ["zones"],
+  "endpoint_ids": ["zones-get"],
+  "ui_contract": {
+    "must_show": ["nombre de zona publica", "acceso rapido a /join"],
+    "latency_target_ms": 3000
+  },
+  "integration_checks": [
+    "zona valida redirige a /join?zone=<slug>",
+    "zona invalida muestra error recuperable"
+  ]
+}

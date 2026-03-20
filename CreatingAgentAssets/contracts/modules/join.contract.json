@@ -1,0 +1,20 @@
+{
+  "module_id": "join",
+  "route": "/join",
+  "screen_name": "Registro temporal visitante",
+  "contract_version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "breaking_change": false,
+  "owners": { "fe": "FE Team", "be": "BE Team" },
+  "entities": ["users_temp", "zones"],
+  "endpoint_ids": ["users-temp-create"],
+  "ui_contract": {
+    "required_fields": ["nickname", "language"],
+    "success_redirect": "/zone/[slug]",
+    "error_states": ["nickname_en_uso", "payload_invalido"]
+  },
+  "integration_checks": [
+    "crea sesion temporal de 1 hora",
+    "guarda zone_slug para consultas posteriores"
+  ]
+}

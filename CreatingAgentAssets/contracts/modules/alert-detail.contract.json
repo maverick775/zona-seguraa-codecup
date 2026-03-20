@@ -1,0 +1,20 @@
+{
+  "module_id": "alert-detail",
+  "route": "/alert/[id]",
+  "screen_name": "Detalle de alerta para comunidad",
+  "contract_version": "1.0.0",
+  "last_updated": "2026-03-20",
+  "breaking_change": false,
+  "owners": { "fe": "FE Team", "be": "BE Team" },
+  "entities": ["alerts", "alert_votes"],
+  "endpoint_ids": ["alerts-get", "votes-create"],
+  "ui_contract": {
+    "must_show": ["timeline", "conteo de confirmaciones", "distancia relativa"],
+    "feedback_action": "Estoy seguro",
+    "recommendation_samples": ["Evacua a punto Y", "Activa camara"]
+  },
+  "integration_checks": [
+    "muestra cambios de nivel sin recargar",
+    "permite voto con comentario corto"
+  ]
+}

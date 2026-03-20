@@ -1,0 +1,362 @@
+Zona SeguRAA – Decisiones Técnicas y Configuración
+Guía de Entorno para el Equipo de Desarrollo · CodeCup 2026
+1. Decisión: Vercel sobre AWS
+TL;DR: Usar Vercel + Supabase. No usar AWS EC2 ni Lambda para el MVP del hackathon.
+Criterio
+AWS (EC2 + Lambda + DynamoDB)
+✅ Vercel + Supabase
+Tiempo de primer deploy
+45–90 min (VPC, security groups, IAM, etc.)
+<5 min (git push)
+Preview URLs para QA
+Requiere setup manual
+Automáticas por cada PR
+Variables de entorno
+SSM Parameter Store o .env manual
+Dashboard visual simple
+Realtime out-of-the-box
+Requiere API Gateway + WebSocket Lambda
+Incluido en Supabase
+Dominio personalizado
+Route53 + ACM (15 min adicionales)
+1 click en dashboard
+Free tier para demo
+Limitado; instancias pagan por hora
+Generoso; sin costo
+Rollback
+Manual o con CodeDeploy
+Instant rollback a cualquier commit
+Overhead de configuración
+Alto (no es el foco del hackathon)
+Mínimo
+Justificación estratégica: En un hackathon, cada hora de configuración de infraestructura es una hora menos de producto. Vercel + Supabase permiten estar en producción en menos de 10 minutos. AWS es la plataforma correcta para producción real — está contemplada en el roadmap post-CodeCup para alta disponibilidad y escala [file:2].
+2. Setup del Entorno — Paso a Paso
+2.1 Inicializar el proyecto Next.js
+npx create-next-app@latest zona-seguraa --js --tailwind --app --no-src-dir
+cd zona-seguraa
+npm install @supabase/supabase-js leaflet react-leaflet
+2.2 Crear proyecto en Supabase
+Ir a supabase.com → New Project
+Nombre: zona-seguraa-codecup
+Región: US East (N. Virginia) — menor latencia desde México
+Password: guardar en el .env.local del equipo
+Habilitar Realtime en Database → Replication → Tables: seleccionar alerts y nodes
+2.3 Variables de entorno
+Crear .env.local en la raíz del proyecto (NO commitear a git):
+NEXT_PUBLIC_SUPABASE_URL=https://[tu-proyecto].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[anon-key-de-supabase]
+SUPABASE_SERVICE_ROLE_KEY=[service-role-key-de-supabase]
+LORIOT_APP_ID=[app-id-de-loriot]
+LORIOT_API_TOKEN=[token-de-loriot]
+LORIOT_SERVER=https://us1.loriot.io
+DEMO_COORDINATOR_EMAIL=coordinator@zonaseguraa.com
+DEMO_COORDINATOR_PASSWORD=[password-seguro]
+Agregar las mismas variables en Vercel Dashboard → Settings → Environment Variables.
+2.4 Estructura de carpetas del proyecto
+zona-seguraa/
+├── app/
+│ ├── page.js # Landing page con QR
+│ ├── join/page.js # Registro visitante temporal
+│ ├── zone/[id]/page.js # Vista de zona con mapa
+│ ├── alert/
+│ │ ├── new/page.js # Formulario nueva alerta
+│ │ └── [id]/page.js # Detalle de alerta (votos)
+│ ├── coordinator/
+│ │ ├── login/page.js # Login coordinador
+│ │ ├── dashboard/page.js # Dashboard principal
+│ │ └── alert/[id]/page.js # Gestión de alerta
+│ └── api/
+│ ├── alerts/
+│ │ ├── route.js # GET, POST /api/alerts
+│ │ └── [id]/route.js # PATCH /api/alerts/:id
+│ ├── votes/route.js # POST /api/votes
+│ ├── nodes/route.js # GET /api/nodes
+│ ├── users/temp/route.js # POST /api/users/temp
+│ ├── coordinator/login/route.js
+│ └── iot/
+│ ├── uplink/route.js # Webhook receptor Loriot
+│ └── downlink/route.js # Comando al AVP
+├── components/
+│ ├── StadiumMap.js # Mapa Leaflet del estadio
+│ ├── AlertCard.js # Tarjeta de alerta en lista
+│ ├── AlertForm.js # Formulario multistep
+│ ├── ResponseTimer.js # Cronómetro de respuesta
+│ ├── NodeMarker.js # Marcador de nodo en mapa
+│ └── VoteButton.js # Botón de validación comunitaria
+├── lib/
+│ ├── supabase.js # Cliente Supabase (browser)
+│ ├── supabase-server.js # Cliente Supabase (server-side)
+│ └── loriot.js # Helpers para API de Loriot
+├── hooks/
+│ ├── useRealtimeAlerts.js # Suscripción realtime a alertas
+│ └── useRealtimeNodes.js # Suscripción realtime a nodos
+├── scripts/
+│ └── demo-mode.js # Script Wizard of Oz
+└── public/
+├── estadio-akron.jpg # Imagen del estadio (overlay)
+└── qr-demo.png # QR para el join de visitantes
+2.5 Deploy en Vercel
+# Instalar Vercel CLI (una vez)
+npm i -g vercel
+# Primer deploy (linkea con el proyecto Vercel)
+vercel
+# Deploys subsecuentes
+git push origin main # Vercel auto-deploy al push
+# Preview de una rama
+git push origin feature/dashboard # Genera URL de preview automática
+3. Cliente Supabase — Configuración
+// lib/supabase.js — Para uso en componentes del browser
+import { createBrowserClient } from '@supabase/ssr'
+export function createClient() {
+return createBrowserClient(
+process.env.NEXT_PUBLIC_SUPABASE_URL,
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
+}
+// lib/supabase-server.js — Para uso en API routes (server-side)
+import { createClient } from '@supabase/supabase-js'
+export function createServerClient() {
+return createClient(
+process.env.NEXT_PUBLIC_SUPABASE_URL,
+process.env.SUPABASE_SERVICE_ROLE_KEY // Permisos completos para la API
+)
+}
+4. Hook de Realtime — Plantilla
+// hooks/useRealtimeAlerts.js
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase'
+export function useRealtimeAlerts(zoneId) {
+const [alerts, setAlerts] = useState([])
+const supabase = createClient()
+useEffect(() => {
+// Carga inicial
+supabase
+.from('alerts')
+.select('*, nodes(*), alert_votes(*)')
+.eq('zone_id', zoneId)
+.order('created_at', { ascending: false })
+.then(({ data }) => setAlerts(data || []))
+// Suscripción a cambios en tiempo real
+const channel = supabase
+.channel(`alerts:zone:${zoneId}`)
+.on('postgres_changes', {
+event: '*', // INSERT, UPDATE, DELETE
+schema: 'public',
+table: 'alerts',
+filter: `zone_id=eq.${zoneId}`
+}, (payload) => {
+setAlerts(prev => {
+if (payload.eventType === 'INSERT') return [payload.new, ...prev]
+if (payload.eventType === 'UPDATE') return prev.map(a => a.id === payload.new.id ? payload.new : a)
+return prev
+})
+})
+.subscribe()
+return () => supabase.removeChannel(channel)
+}, [zoneId])
+return alerts
+}
+5. Webhook Loriot → Backend
+5.1 Configurar webhook en Loriot
+En la consola de Loriot:
+Ir a tu aplicación → Output → Add new output
+Tipo: HTTP Push
+URL: https://zonaseguraa.com/api/iot/uplink
+Method: POST
+Content-type: application/json
+5.2 Estructura del payload que envía Loriot
+{
+"EUI": "0004A30B001B9B27",
+"ts": 1742395200000,
+"rssi": -87,
+"snr": 8.2,
+"fcnt": 42,
+"port": 1,
+"data": "0164"
+}
+data es hex: 01 = estado (1=ALERTA), 64 = batería (100%)
+5.3 Implementación del webhook
+// app/api/iot/uplink/route.js
+import { createServerClient } from '@/lib/supabase-server'
+import { NextResponse } from 'next/server'
+export async function POST(request) {
+const supabase = createServerClient()
+const body = await request.json()
+const eui = body.EUI
+const hex = body.data || ''
+const alertState = parseInt(hex.substring(0, 2), 16) // Byte 0
+const batteryPct = parseInt(hex.substring(2, 4), 16) // Byte 1
+// Registrar uplink en log
+await supabase.from('iot_uplinks').insert({
+node_eui: eui,
+payload_hex: hex,
+alert_state: alertState,
+battery_pct: batteryPct
+})
+// Buscar el nodo correspondiente
+const { data: node } = await supabase
+.from('nodes')
+.select('*')
+.eq('lorawan_eui', eui)
+.single()
+if (!node) return NextResponse.json({ error: 'Node not found' }, { status: 404 })
+// Actualizar estado del nodo
+const nodeStatus = alertState > 0 ? 'alert' : 'online'
+await supabase.from('nodes').update({ status: nodeStatus, last_seen_at: new Date().toISOString() }).eq('id', node.id)
+// Si hay alerta activa, crear o actualizar alerta en la zona
+if (alertState > 0) {
+const { data: existingAlert } = await supabase
+.from('alerts')
+.select('id')
+.eq('node_id', node.id)
+.in('status', ['active', 'in_progress'])
+.single()
+if (!existingAlert) {
+await supabase.from('alerts').insert({
+zone_id: node.zone_id,
+node_id: node.id,
+type: 'security',
+level: alertState,
+status: 'active',
+description: `Alerta activada por nodo AVP3-ALFA (${eui})`,
+language: 'es',
+created_by_nick: 'AVP3-SYSTEM'
+})
+}
+}
+return NextResponse.json({ ok: true })
+}
+6. Script Wizard of Oz
+// scripts/demo-mode.js
+// Ejecutar con: node scripts/demo-mode.js
+const BASE_URL = process.env.DEMO_URL || 'https://zonaseguraa.com'
+const ZONE_ID = process.env.ZONE_ID || 'AKRON_ZONE_UUID'
+const DELAY = parseInt(process.env.DELAY) || 5000 // ms entre pasos
+async function post(path, body) {
+const res = await fetch(`${BASE_URL}${path}`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(body)
+})
+return res.json()
+}
+async function patch(path, body) {
+const res = await fetch(`${BASE_URL}${path}`, {
+method: 'PATCH',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(body)
+})
+return res.json()
+}
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+async function runDemoScenario() {
+console.log('\n🎬 ZONA SEGURAA — DEMO MODE · Estadio Akron\n')
+// Paso 1: Visitante extranjero se registra
+console.log('👤 [1/6] John (UK) se registra como visitante...')
+const user = await post('/api/users/temp', { nickname: 'JohnUK_SeatB14', zone_id: ZONE_ID, language: 'en' })
+await sleep(DELAY)
+// Paso 2: Activa alerta médica
+console.log('🚨 [2/6] John activa botón de pánico — Medical Emergency...')
+const alert = await post('/api/alerts', {
+zone_id: ZONE_ID,
+node_id: 'SIMULATED_NODE_NORTH_STAND',
+type: 'medical',
+level: 1,
+status: 'active',
+description: 'My friend collapsed, needs immediate medical attention. Row 5, Seat 14.',
+language: 'en',
+created_by_nick: 'JohnUK_SeatB14'
+})
+console.log(` ✅ Alerta creada: ${alert.id}`)
+await sleep(DELAY)
+// Paso 3: Espectadores validan (3 votos → escala a Nivel 2)
+console.log('👥 [3/6] Espectadores cercanos validan el reporte...')
+await post('/api/votes', { alert_id: alert.id, nickname: 'Maria_Sec3', comment: 'Fila 5, asiento 14, lo estoy viendo', role: 'visitor' })
+await sleep(1000)
+await post('/api/votes', { alert_id: alert.id, nickname: 'Carlos_Grad', comment: 'Confirmado, persona inconsciente', role: 'visitor' })
+await sleep(1000)
+await post('/api/votes', { alert_id: alert.id, nickname: 'LupitaP', comment: 'Necesita médico urgente', role: 'visitor' })
+console.log(' ✅ 3 votos acumulados → NIVEL 2 activado automáticamente')
+await sleep(DELAY)
+// Paso 4: Coordinador marca EN ATENCIÓN
+console.log('🛡️ [4/6] Coordinador de seguridad atiende el reporte...')
+await patch(`/api/alerts/${alert.id}`, { status: 'in_progress' })
+console.log(' ✅ Estado: EN ATENCIÓN — cronómetro detenido')
+await sleep(DELAY)
+// Paso 5: Médicos llegan
+console.log('🏥 [5/6] Equipo médico llega a la ubicación...')
+await sleep(DELAY * 2)
+// Paso 6: Coordinador resuelve
+console.log('✅ [6/6] Coordinador cierra el incidente como RESUELTO')
+await patch(`/api/alerts/${alert.id}`, { status: 'resolved' })
+console.log('\n🎯 Demo completado. Tiempo de respuesta total: ~42 segundos\n')
+}
+runDemoScenario().catch(console.error)
+7. Configuración del Mapa Leaflet — Estadio Akron
+// components/StadiumMap.js
+'use client'
+import { useEffect, useRef } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+// Coordenadas reales del Estadio Akron, Guadalajara
+const AKRON_CENTER = [20.6892, -103.4653]
+const AKRON_BOUNDS = [
+[20.6870, -103.4680], // SW
+[20.6915, -103.4625] // NE
+]
+export default function StadiumMap({ nodes, alerts, onNodeClick }) {
+const mapRef = useRef(null)
+const mapInstance = useRef(null)
+useEffect(() => {
+if (mapInstance.current) return
+mapInstance.current = L.map(mapRef.current, {
+center: AKRON_CENTER,
+zoom: 17,
+zoomControl: true
+})
+// Base layer: OpenStreetMap
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+attribution: '© OpenStreetMap contributors'
+}).addTo(mapInstance.current)
+// Overlay: imagen del estadio (agregar cuando se tenga el archivo)
+// L.imageOverlay('/estadio-akron.jpg', AKRON_BOUNDS).addTo(mapInstance.current)
+}, [])
+useEffect(() => {
+if (!mapInstance.current) return
+// Actualizar marcadores cuando cambien nodos
+nodes?.forEach(node => {
+const color = node.status === 'alert' ? 'red' : node.status === 'online' ? 'green' : 'gray'
+const icon = L.divIcon({
+className: '',
+html: `<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid white;"></div>`
+})
+L.marker([node.lat || AKRON_CENTER[0], node.lng || AKRON_CENTER[1]], { icon })
+.addTo(mapInstance.current)
+.bindPopup(`<b>${node.name}</b><br>Estado: ${node.status}`)
+})
+}, [nodes])
+return <div ref={mapRef} style={{ height: '400px', width: '100%', borderRadius: '8px' }} />
+}
+8. Checklist de Demo — Viernes 20
+Antes de salir al evento
+Vercel deploy con main branch sin errores
+Supabase Realtime activo y probado
+Usuarios coordinadores pre-creados y con password probado
+Zona akron y 8 nodos insertados en DB
+QR impreso y en digital para registro de visitantes
+Script demo-mode.js probado exitosamente 3 veces
+Video de respaldo grabado con el flujo completo funcionando
+Durante la presentación
+Abrir dashboard en laptop del coordinador (pantalla compartida con proyector)
+Mostrar QR al jurado → invitar a escanear y registrarse como visitantes
+Narrar la historia del extranjero mientras ejecutas el botón de pánico
+Señalar el cronómetro de respuesta en tiempo real
+Mostrar el mapa con el nodo en alerta
+Coordinar marcado de EN ATENCIÓN visiblemente
+Citar el tiempo de respuesta: "X segundos desde el reporte hasta la atención"
+Si el hardware AVP está presente: señalar el estrobo/sirena como confirmación física
+Métricas de impacto para mencionar verbalmente
+74.6% de llamadas al 911 en México son improcedentes
+Zona SeguRAA reduce falsas alarmas a <10% mediante validación comunitaria
+750+ alarmas instaladas y 70% reducción de incidentes en colonias de ZMG
+Estadio Akron: sede FIFA World Cup 2026 Guadalajara
