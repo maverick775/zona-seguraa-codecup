@@ -26,8 +26,14 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const body = await request.json();
-  const { zone_id, node_id, type, description } = body;
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 })
+  }
+  
+  const { zone_id, node_id, type, description } = body
 
   if (!zone_id) {
     return NextResponse.json({ error: 'zone_id is required' }, { status: 400 });

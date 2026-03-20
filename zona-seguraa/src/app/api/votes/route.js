@@ -40,28 +40,39 @@ export async function POST(request) {
     insertData.user_id = user_id;
   }
 
-  const { data: vote, error: voteError } = await supabase
-    .from('votes')
-    .insert(insertData)
-    .select()
-    .single();
+  const { data: currentAlert } = await supabase
+    .from('alerts')
+    .select('level')
+    .eq('id', alert_id)
+    .single()
 
-  if (voteError) {
-    return NextResponse.json({ error: voteError.message }, { status: 500 });
-  }
-
-  const { data: voteAgg, error: aggError } = await supabase
+  const { data: voteAgg } = await supabase
     .from('votes')
     .select('weight')
-    .eq('alert_id', alert_id);
+    .eq('alert_id', alert_id)
 
-  if (aggError) {
-    return NextResponse.json({ error: aggError.message }, { status: 500 });
+  const total = voteAgg.reduce((sum, v) => sum + v.weight, 0)
+  let updatedAlert = { ...alert, level: currentAlert.level }
+
+  if (total >= 7 && currentAlert.level < 3) {
+    const { data } = await supabase
+      .from('alerts')
+      .update({ level: 3, updated_at: new Date().toISOString() })
+      .eq('id', alert_id)
+      .eq('level', currentAlert.level)   // ← condición optimista: solo actualiza si el nivel no cambió
+      .select()
+      .single()
+    if (data) updatedAlert = data
+  } else if (total >= 3 && currentAlert.level === 1) {
+    const { data } = await supabase
+      .from('alerts')
+      .update({ level: 2, updated_at: new Date().toISOString() })
+      .eq('id', alert_id)
+      .eq('level', 1)   // ← condición optimista
+      .select()
+      .single()
+    if (data) updatedAlert = data
   }
-
-  const total = voteAgg.reduce((sum, v) => sum + v.weight, 0);
-
-  let updatedAlert = alert;
 
   if (total >= 7 && alert.level < 3) {
     const { data, error } = await supabase
