@@ -1,0 +1,207 @@
+-- ============================================================
+-- SEED DATA · Zona SeguRAA · CodeCup 2026
+-- Datos dummy marcados con 🔧 UPDATE para reemplazar después
+-- ============================================================
+
+
+-- ============================================================
+-- 1. ZONA: Estadio Akron
+-- ============================================================
+
+INSERT INTO zones (
+  id,
+  slug,
+  name,
+  description,
+  city,
+  active
+) VALUES (
+  'a1000000-0000-0000-0000-000000000001',
+  'akron',
+  'Estadio Akron – FIFA World Cup 2026',
+  'Sede oficial del Mundial de Fútbol 2026 en Guadalajara, Jalisco. Capacidad 49,850 espectadores. Zona de demostración del sistema Zona SeguRAA.',
+  'Guadalajara',
+  true
+)
+ON CONFLICT (slug) DO UPDATE SET
+  name        = EXCLUDED.name,
+  description = EXCLUDED.description,
+  active      = EXCLUDED.active;
+
+
+-- ============================================================
+-- 2. NODOS (8 total)
+-- Coordenadas GPS: alrededor del Estadio Akron real
+-- pos_x / pos_y: posición % en overlay de imagen (0=izquierda/arriba, 100=derecha/abajo)
+-- 🔧 UPDATE campos marcados después de tener datos reales
+-- ============================================================
+
+INSERT INTO nodes (
+  id,
+  zone_id,
+  name,
+  type,
+  pos_x, pos_y,
+  lat, lng,
+  lorawan_eui,
+  status,
+  battery_pct,
+  last_seen_at
+) VALUES
+
+  -- ──────────────────────────────────────────────────────────
+  -- NODO 1: AVP3-ALFA (FÍSICO — conectado al Pico 2 + RFM95W)
+  -- 🔧 UPDATE: lorawan_eui con el DevEUI real del dispositivo en Loriot
+  -- ──────────────────────────────────────────────────────────
+  (
+    'b1000000-0000-0000-0000-000000000001',
+    'a1000000-0000-0000-0000-000000000001',
+    'AVP3-Alfa-01',
+    'avp_physical',
+    50.0, 48.0,               -- Centro del estadio (overlay)
+    20.68920, -103.46530,     -- GPS: Estadio Akron (coords reales)
+    'DUMMY-EUI-0000000001',   -- 🔧 UPDATE con DevEUI real del Pico 2
+    'online',
+    100,
+    NOW()
+  ),
+
+  -- ──────────────────────────────────────────────────────────
+  -- NODO 2: Gradería Norte (simulado)
+  -- ──────────────────────────────────────────────────────────
+  (
+    'b1000000-0000-0000-0000-000000000002',
+    'a1000000-0000-0000-0000-000000000001',
+    'Gradería Norte',
+    'avp_simulated',
+    50.0, 8.0,
+    20.69120, -103.46530,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+
+  -- ──────────────────────────────────────────────────────────
+  -- NODO 3: Gradería Sur (simulado)
+  -- ──────────────────────────────────────────────────────────
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'a1000000-0000-0000-0000-000000000001',
+    'Gradería Sur',
+    'avp_simulated',
+    50.0, 88.0,
+    20.68710, -103.46530,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+
+  -- ──────────────────────────────────────────────────────────
+  -- NODO 4: Gradería Este (simulado)
+  -- ──────────────────────────────────────────────────────────
+  (
+    'b1000000-0000-0000-0000-000000000004',
+    'a1000000-0000-0000-0000-000000000001',
+    'Gradería Este',
+    'avp_simulated',
+    88.0, 48.0,
+    20.68920, -103.46250,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+
+  -- ──────────────────────────────────────────────────────────
+  -- NODO 5: Gradería Oeste (simulado)
+  -- ──────────────────────────────────────────────────────────
+  (
+    'b1000000-0000-0000-0000-000000000005',
+    'a1000000-0000-0000-0000-000000000001',
+    'Gradería Oeste',
+    'avp_simulated',
+    12.0, 48.0,
+    20.68920, -103.46800,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+
+  -- ──────────────────────────────────────────────────────────
+  -- NODO 6: Zona Médica (simulado)
+  -- ──────────────────────────────────────────────────────────
+  (
+    'b1000000-0000-0000-0000-000000000006',
+    'a1000000-0000-0000-0000-000000000001',
+    'Zona Médica',
+    'medical_point',
+    22.0, 28.0,
+    20.69050, -103.46680,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+
+  -- ──────────────────────────────────────────────────────────
+  -- NODO 7: Salida Principal (simulado)
+  -- ──────────────────────────────────────────────────────────
+  (
+    'b1000000-0000-0000-0000-000000000007',
+    'a1000000-0000-0000-0000-000000000001',
+    'Salida Principal',
+    'exit',
+    50.0, 96.0,
+    20.68680, -103.46530,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  ),
+
+  -- ──────────────────────────────────────────────────────────
+  -- NODO 8: Salida de Emergencia (simulado)
+  -- ──────────────────────────────────────────────────────────
+  (
+    'b1000000-0000-0000-0000-000000000008',
+    'a1000000-0000-0000-0000-000000000001',
+    'Salida de Emergencia',
+    'emergency_exit',
+    80.0, 16.0,
+    20.69100, -103.46350,
+    NULL,
+    'online',
+    NULL,
+    NULL
+  )
+
+ON CONFLICT (id) DO UPDATE SET
+  name         = EXCLUDED.name,
+  type         = EXCLUDED.type,
+  pos_x        = EXCLUDED.pos_x,
+  pos_y        = EXCLUDED.pos_y,
+  lat          = EXCLUDED.lat,
+  lng          = EXCLUDED.lng,
+  lorawan_eui  = EXCLUDED.lorawan_eui,
+  status       = EXCLUDED.status;
+
+
+-- ============================================================
+-- 3. VERIFICACIÓN INMEDIATA
+-- ============================================================
+SELECT
+  n.name                        AS nodo,
+  n.type                        AS tipo,
+  n.status                      AS estado,
+  COALESCE(n.lorawan_eui, '— simulado —') AS eui,
+  ROUND(n.pos_x::numeric, 1)    AS "pos_x%",
+  ROUND(n.pos_y::numeric, 1)    AS "pos_y%",
+  n.lat,
+  n.lng
+FROM nodes n
+JOIN zones z ON z.id = n.zone_id
+WHERE z.slug = 'akron'
+ORDER BY n.type DESC, n.name;
