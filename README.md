@@ -1,7 +1,7 @@
 # Zona SeguRAA — CodeCup 2026
 
-> **Sistema de alerta colaborativa IoT para eventos masivos**  
-> Demo venue: **FIFA FanFest — Plaza de la Liberación, Guadalajara** · 60–70k personas/día · 39 días
+> **Red colaborativa de alerta para zonas públicas abiertas**  
+> Demo venue: **Corredor Chapultepec — Zona Centro de Guadalajara (ZMG)** · 24/7 · flujo ciudadano distribuido
 
 [![Estado](https://img.shields.io/badge/Sprint-1%20Backend-blue)]()
 [![Deploy](https://img.shields.io/badge/Deploy-Vercel-black)]()
@@ -11,11 +11,11 @@
 
 ## ¿Qué es Zona SeguRAA?
 
-Zona SeguRAA es una plataforma que combina dispositivos **LoRaWAN físicos** (AVP3-ALFA: Raspberry Pi Pico 2 + RFM95W) con una **app web colaborativa** para detectar, escalar y coordinar respuestas a emergencias en espacios públicos sin infraestructura de control perimetral.
+Zona SeguRAA habilita una **respuesta ciudadana orquestada** en espacios abiertos como corredores urbanos, plazas y estaciones de transferencia. Combinamos **nodos IoT LoRaWAN** (AVP3-ALFA: Raspberry Pi Pico 2 + RFM95W) con una **app web accesible** para detectar, validar y escalar incidentes con menos del 10 % de falsas alarmas.
 
-El sistema funciona en dos capas:
-- **Capa IoT:** Nodos físicos transmiten por LoRaWAN → Gateway Milesight UG63 → Loriot Network Server → webhook a la API
-- **Capa colaborativa:** Asistentes reportan incidentes desde el navegador (sin instalar nada) → votación con peso por rol → escalada automática al coordinador de turno
+Capas clave:
+- **IoT + Edge AI:** Nodos físicos capturan métricas contextuales (hora, ruido, movimiento) y ejecutan filtros locales para reducir disparos accidentales antes de transmitir por LoRaWAN → Gateway Milesight UG63 → Loriot → API.
+- **Capa colaborativa:** Cualquier visitante puede activar el botón SOS accesible en <1 s; la comunidad valida con roles diferenciados; la IA contextual propone nivel y acciones; coordinadores del C5 Zapopan/Piloto 2026 reciben alertas priorizadas.
 
 ---
 
@@ -52,6 +52,12 @@ zona-seguraa-codecup/
         ├── supabase-server.js # Cliente servidor (service role)
         ├── loriot.js          # Downlinks, uplink parser, validator
         └── leaflet-config.js  # Fix SSR para Leaflet en Next.js
+CreatingAgentAssets/
+├── dev-methodology.md         # Guía de entorno/método acelerado
+├── db/schema.md               # Contrato del modelo de datos
+├── contracts/                 # Contratos FE/BE por pantalla
+├── runbook.md                 # Alcance permitido para el agente
+└── seederZS.txt               # Zona pública (Corredor Chapultepec)
 ```
 
 ---
@@ -168,18 +174,31 @@ Pico 2 + RFM95W                Terminal Portátil
 - **API responses:** siempre `NextResponse.json()`, nunca `Response` nativo
 - **Imports:** usar alias `@/lib/...` y `@/components/...`, nunca rutas relativas con `../`
 - **Secrets:** variables de entorno **solo** vía `.env.local` — confirmar con tech lead antes de deployar
+- **Clean code aplicado:** documentar solo el *por qué* (razón de decisiones) y mantener funciones reutilizables y aisladas.
+- **Contratos compartidos:** todo cambio en UI o API se negocia vía archivos de `CreatingAgentAssets/contracts/` y PR conjunto.
 
 ---
 
-## Documentación del proyecto
+## Documentación operacional
 
-Los documentos de planeación completos están disponibles en el canal del equipo:
-
-- 📋 **System Overview** — arquitectura, modelo de datos, flujos
-- 📅 **Sprint Plan** — historias de usuario, story points, responsables  
-- 🛠️ **Dev Setup Guide** — configuración detallada del entorno
+- 📋 **System Overview** — arquitectura, modelo de datos, flujos (`CreatingAgentAssets/ZonaSeguRAA System Overview.docx`)
+- 📅 **Sprint Plan** — historias de usuario, story points (`CreatingAgentAssets/ZonaSeguRAA - Sprint Plan.docx`)
+- 🛠️ **Dev Setup Guide** — entorno (`CreatingAgentAssets/ZonaSeguRAA - Dev Setup.docx`)
+- 🧭 **Metodología acelerada:** `CreatingAgentAssets/dev-methodology.md`
+- 🔐 **Runbook y límites del agente:** `CreatingAgentAssets/runbook.md`
+- 🤝 **Contratos FE/BE:** `CreatingAgentAssets/contracts/*`
+- 🗂️ **Workflow Windsurf:** `.windsurf/workflows/*.md`
 
 ---
+
+## Lineamientos UI/UX y accesibilidad
+
+- Botón SOS prominente activable en <1 s con pulsación prolongada de 3 s.
+- Validaciones comunitarias ≥60 % y feedback "Estoy seguro" post-evento.
+- Edge AI correlaciona hora/ubicación para reducir falsas alarmas 90 %.
+- Paleta base: `--primary-teal #2b7a78`, `--ally-blue #3a86ff`, `--bg-light #f8f9fa`, `--emergency-red #e63946`, `--admin-purple #a020f0`, textos `#1d1d1f/#6c757d`.
+- Niveles de alerta (Bajo/Medio/Alto/Crítico) con mensajes calmados "Respira y sigue instrucciones" y escalamiento multicanal (push, SMS, WhatsApp, LoRaWAN offline).
+- Recomendaciones personalizadas ("Evacua a punto Y", "Activa cámara") y mapas accesibles con íconos universales.
 
 ## Equipo
 
@@ -192,5 +211,5 @@ Los documentos de planeación completos están disponibles en el canal del equip
 ---
 
 *Zona SeguRAA · CodeCup 2026 · Guadalajara, México*
-Made with ❤️ by Team Zona SeguRAA
-Main developer: Erick Martínez Villa
+*Made with ❤️ by Team Zona SeguRAA*
+*Main developer: Erick Martínez Villa*
