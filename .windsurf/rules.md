@@ -2,7 +2,7 @@
 
 ## Identidad del proyecto
 - **Nombre:** Zona SeguRAA · CodeCup 2026
-- **Venue demo:** FanFest — Zona Centro de Guadalajara (ZMG)
+- **Venue demo:** FanFest FIFA 2026 — Centro Histórico GDL
 - **Propósito:** red colaborativa de alerta ciudadana para zonas públicas abiertas con validación comunitaria e IoT LoRaWAN
 
 ## Stack obligatorio

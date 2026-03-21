@@ -33,7 +33,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 })
   }
   
-  const { zone_id, node_id, type, description } = body
+  const { zone_id, node_id, type, description, created_by_nick } = body
 
   if (!zone_id) {
     return NextResponse.json({ error: 'zone_id is required' }, { status: 400 });
@@ -45,7 +45,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'type is required' }, { status: 400 });
   }
 
-  const validTypes = ['crowd', 'medical', 'fire', 'security', 'test'];
+  const validTypes = ['medical', 'security', 'fire', 'evacuation'];
   if (!validTypes.includes(type)) {
     return NextResponse.json({ error: 'invalid type' }, { status: 400 });
   }
@@ -61,6 +61,9 @@ export async function POST(request) {
   };
   if (description) {
     insertData.description = description;
+  }
+  if (created_by_nick) {
+    insertData.created_by_nick = created_by_nick;
   }
 
   const { data, error } = await supabase
