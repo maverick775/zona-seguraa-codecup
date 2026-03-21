@@ -1,6 +1,35 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
 
+export async function GET(request, { params }) {
+  const { id } = await params;
+  const supabase = createServerClient();
+
+  const { data: alert, error } = await supabase
+    .from('alerts')
+    .select('*, node:nodes(id, name, type, lat, lng)')
+    .eq('id', id)
+    .single();
+
+  if (error || !alert) {
+    return NextResponse.json({ error: 'alert not found' }, { status: 404 });
+  }
+
+  const { data: votes } = await supabase
+    .from('alert_votes')
+    .select('*')
+    .eq('alert_id', id)
+    .order('created_at', { ascending: false });
+
+  const totalWeight = (votes || []).reduce((sum, v) => sum + v.weight, 0);
+
+  return NextResponse.json({
+    ...alert,
+    votes: votes || [],
+    votes_total_weight: totalWeight
+  });
+}
+
 export async function PATCH(request, { params }) {
   const { id } = await params;
   const body = await request.json();
