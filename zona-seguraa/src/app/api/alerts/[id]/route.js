@@ -11,7 +11,7 @@ export async function PATCH(request, { params }) {
   }
 
   if (status) {
-    const validStatuses = ['active', 'in_progress', 'resolved'];
+    const validStatuses = ['active', 'in_progress', 'resolved', 'false_alarm'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json({ error: 'invalid status' }, { status: 400 });
     }

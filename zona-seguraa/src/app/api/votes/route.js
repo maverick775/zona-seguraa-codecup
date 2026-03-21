@@ -43,7 +43,7 @@ export async function POST(request) {
   }
 
   const { data: vote, error: voteError } = await supabase
-    .from('votes')
+    .from('alert_votes')
     .insert(insertData)
     .select()
     .single()
@@ -63,7 +63,7 @@ export async function POST(request) {
   }
 
   const { data: voteAgg, error: aggError } = await supabase
-    .from('votes')
+    .from('alert_votes')
     .select('weight')
     .eq('alert_id', alert_id)
 

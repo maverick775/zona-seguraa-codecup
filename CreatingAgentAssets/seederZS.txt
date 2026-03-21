@@ -1,0 +1,214 @@
+-- ============================================================
+-- SEED DATA · Zona SeguRAA · CodeCup 2026
+-- Venue: FanFest FIFA 2026 — Centro Histórico de Guadalajara
+-- ⚠️  Coordenadas GPS y pos x/y marcadas con 🔧 UPDATE
+--     corresponden a los archivos CSV exportados de Google My Maps:
+--     - FanFest Mundial 2026 - Zonas FanFest.csv
+--     - FanFest Mundial 2026 - Nodos de Alarma.csv
+-- ============================================================
+
+
+-- ============================================================
+-- 1. ZONAS DEL FANFEST
+-- Cada zona corresponde a un polígono del CSV "Zonas FanFest"
+-- ============================================================
+
+INSERT INTO zones (id, slug, name, description, city, active) VALUES
+
+  (
+    'a1000000-0000-0000-0000-000000000001',
+    'fanfest-plaza-liberacion',
+    'FanFest — Zona Plaza de la Liberación',
+    'Zona principal del FanFest FIFA 2026 en el Centro Histórico de Guadalajara. Acceso peatonal libre. Aforo estimado: 40,000 personas/día.',
+    'Guadalajara',
+    true
+  ),
+
+  (
+    'a1000000-0000-0000-0000-000000000002',
+    'fanfest-rotonda-jaliscienses',
+    'FanFest — Zona Rotonda de los Jaliscienses Ilustres',
+    'Zona secundaria del FanFest. Área cultural y de actividades comunitarias.',
+    'Guadalajara',
+    true
+  ),
+
+  (
+    'a1000000-0000-0000-0000-000000000003',
+    'fanfest-catedral',
+    'FanFest — Zona Catedral',
+    'Zona norte del corredor FanFest. Alta densidad peatonal. Acceso desde Av. Hidalgo.',
+    'Guadalajara',
+    true
+  )
+
+ON CONFLICT (id) DO UPDATE SET
+  slug        = EXCLUDED.slug,
+  name        = EXCLUDED.name,
+  description = EXCLUDED.description,
+  active      = EXCLUDED.active;
+
+
+-- ============================================================
+-- 2. NODOS DE ALARMA
+-- Cada nodo corresponde a una fila del CSV "Nodos de Alarma"
+-- pos x/y = posición % en el overlay de imagen del mapa (0-100)
+-- lorawan_eui: 🔧 UPDATE con DevEUI real del Pico 2 / Heltec
+-- ============================================================
+
+INSERT INTO nodes (
+  id, zone_id, name, type,
+  x, y, lat, lng,
+  lorawan_eui, status, last_seen_at
+) VALUES
+
+  -- ──────────────────────────────────────────────────────────
+  -- ZONA 1 — Plaza de la Liberación
+  -- ──────────────────────────────────────────────────────────
+
+  (
+    'b1000000-0000-0000-0000-000000000001',
+    'a1000000-0000-0000-0000-000000000001',
+    'AVP3-Alfa-01 — Centro Plaza Liberación',
+    'avp_physical',
+    50.0, 50.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6736, -103.3478,        -- 🔧 UPDATE con GPS reales (Plaza de la Liberación)
+    'DUMMY-EUI-0000000001',   -- 🔧 UPDATE con DevEUI real del Pico 2
+    'online',
+    NOW()
+  ),
+
+  (
+    'b1000000-0000-0000-0000-000000000002',
+    'a1000000-0000-0000-0000-000000000001',
+    'AVP3-Sim-01 — Acceso Norte Plaza Liberación',
+    'avp_simulated',
+    50.0, 10.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6750, -103.3478,        -- 🔧 UPDATE con GPS reales
+    NULL,
+    'online',
+    NULL
+  ),
+
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'a1000000-0000-0000-0000-000000000001',
+    'AVP3-Sim-02 — Acceso Sur Plaza Liberación',
+    'avp_simulated',
+    50.0, 90.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6722, -103.3478,        -- 🔧 UPDATE con GPS reales
+    NULL,
+    'online',
+    NULL
+  ),
+
+  (
+    'b1000000-0000-0000-0000-000000000004',
+    'a1000000-0000-0000-0000-000000000001',
+    'Punto Médico — Plaza Liberación Oriente',
+    'medical_point',
+    85.0, 50.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6736, -103.3450,        -- 🔧 UPDATE con GPS reales
+    NULL,
+    'online',
+    NULL
+  ),
+
+  (
+    'b1000000-0000-0000-0000-000000000005',
+    'a1000000-0000-0000-0000-000000000001',
+    'Salida de Emergencia — Av. Hidalgo',
+    'mobile_unit',
+    20.0, 5.0,                -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6760, -103.3490,        -- 🔧 UPDATE con GPS reales
+    NULL,
+    'online',
+    NULL
+  ),
+
+  -- ──────────────────────────────────────────────────────────
+  -- ZONA 2 — Rotonda Jaliscienses Ilustres
+  -- ──────────────────────────────────────────────────────────
+
+  (
+    'b1000000-0000-0000-0000-000000000006',
+    'a1000000-0000-0000-0000-000000000002',
+    'AVP3-Sim-03 — Rotonda Norte',
+    'avp_simulated',
+    50.0, 20.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6780, -103.3500,        -- 🔧 UPDATE con GPS reales (Rotonda)
+    NULL,
+    'online',
+    NULL
+  ),
+
+  (
+    'b1000000-0000-0000-0000-000000000007',
+    'a1000000-0000-0000-0000-000000000002',
+    'Punto Médico — Rotonda Sur',
+    'medical_point',
+    50.0, 80.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6760, -103.3500,        -- 🔧 UPDATE con GPS reales
+    NULL,
+    'online',
+    NULL
+  ),
+
+  -- ──────────────────────────────────────────────────────────
+  -- ZONA 3 — Zona Catedral
+  -- ──────────────────────────────────────────────────────────
+
+  (
+    'b1000000-0000-0000-0000-000000000008',
+    'a1000000-0000-0000-0000-000000000003',
+    'AVP3-Sim-04 — Atrio Catedral',
+    'avp_simulated',
+    50.0, 50.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6700, -103.3520,        -- 🔧 UPDATE con GPS reales (Catedral)
+    NULL,
+    'online',
+    NULL
+  )
+
+ON CONFLICT (id) DO UPDATE SET
+  name        = EXCLUDED.name,
+  type        = EXCLUDED.type,
+  x           = EXCLUDED.x,
+  y           = EXCLUDED.y,
+  lat         = EXCLUDED.lat,
+  lng         = EXCLUDED.lng,
+  lorawan_eui = EXCLUDED.lorawan_eui,
+  status      = EXCLUDED.status;
+
+
+-- ============================================================
+-- 3. COORDINADORES BASE
+-- ⚠️  Estos registros deben existir primero en auth.users de
+--     Supabase (crear manualmente en Dashboard > Auth > Users)
+--     antes de insertar aquí. El ID debe coincidir con auth.users.
+-- ============================================================
+
+INSERT INTO users_coord (id, email, role) VALUES
+  ('c1000000-0000-0000-0000-000000000001', 'erick@zonaseguraa.com', 'coordinator'),
+  ('c1000000-0000-0000-0000-000000000002', 'coordinator@zonaseguraa.com', 'coordinator'),
+  ('c1000000-0000-0000-0000-000000000003', 'admin@zonaseguraa.com',  'admin')
+ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  role  = EXCLUDED.role;
+
+
+-- ============================================================
+-- 4. VERIFICACIÓN FINAL
+-- ============================================================
+
+SELECT
+  z.name                                    AS zona,
+  n.name                                    AS nodo,
+  n.type                                    AS tipo,
+  n.status                                  AS estado,
+  COALESCE(n.lorawan_eui, '— simulado —')  AS eui,
+  n.x                                       AS "pos_x%",
+  n.y                                       AS "pos_y%"
+FROM nodes n
+JOIN zones z ON z.id = n.zone_id
+ORDER BY z.name, n.type DESC, n.name;
