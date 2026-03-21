@@ -36,7 +36,7 @@ export default function CoordinatorLoginPage() {
     }
 
     if (data?.session) {
-      router.push('/coordinator/dashboard')
+      router.push('/coordinator')
     } else {
       setError('No se pudo iniciar sesión. Intenta de nuevo.')
       setLoading(false)
