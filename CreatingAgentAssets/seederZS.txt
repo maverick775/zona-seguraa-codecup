@@ -13,32 +13,40 @@
 -- Cada zona corresponde a un polígono del CSV "Zonas FanFest"
 -- ============================================================
 
-INSERT INTO zones (id, name, description, city) VALUES
+INSERT INTO zones (id, slug, name, description, city, active) VALUES
 
   (
     'a1000000-0000-0000-0000-000000000001',
+    'fanfest-plaza-liberacion',
     'FanFest — Zona Plaza de la Liberación',
     'Zona principal del FanFest FIFA 2026 en el Centro Histórico de Guadalajara. Acceso peatonal libre. Aforo estimado: 40,000 personas/día.',
-    'Guadalajara'
+    'Guadalajara',
+    true
   ),
 
   (
     'a1000000-0000-0000-0000-000000000002',
+    'fanfest-rotonda-jaliscienses',
     'FanFest — Zona Rotonda de los Jaliscienses Ilustres',
     'Zona secundaria del FanFest. Área cultural y de actividades comunitarias.',
-    'Guadalajara'
+    'Guadalajara',
+    true
   ),
 
   (
     'a1000000-0000-0000-0000-000000000003',
+    'fanfest-catedral',
     'FanFest — Zona Catedral',
     'Zona norte del corredor FanFest. Alta densidad peatonal. Acceso desde Av. Hidalgo.',
-    'Guadalajara'
+    'Guadalajara',
+    true
   )
 
 ON CONFLICT (id) DO UPDATE SET
+  slug        = EXCLUDED.slug,
   name        = EXCLUDED.name,
-  description = EXCLUDED.description;
+  description = EXCLUDED.description,
+  active      = EXCLUDED.active;
 
 
 -- ============================================================
@@ -50,7 +58,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO nodes (
   id, zone_id, name, type,
-  x, y,
+  x, y, lat, lng,
   lorawan_eui, status, last_seen_at
 ) VALUES
 
@@ -64,6 +72,7 @@ INSERT INTO nodes (
     'AVP3-Alfa-01 — Centro Plaza Liberación',
     'avp_physical',
     50.0, 50.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6736, -103.3478,        -- 🔧 UPDATE con GPS reales (Plaza de la Liberación)
     'DUMMY-EUI-0000000001',   -- 🔧 UPDATE con DevEUI real del Pico 2
     'online',
     NOW()
@@ -75,6 +84,7 @@ INSERT INTO nodes (
     'AVP3-Sim-01 — Acceso Norte Plaza Liberación',
     'avp_simulated',
     50.0, 10.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6750, -103.3478,        -- 🔧 UPDATE con GPS reales
     NULL,
     'online',
     NULL
@@ -86,6 +96,7 @@ INSERT INTO nodes (
     'AVP3-Sim-02 — Acceso Sur Plaza Liberación',
     'avp_simulated',
     50.0, 90.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6722, -103.3478,        -- 🔧 UPDATE con GPS reales
     NULL,
     'online',
     NULL
@@ -97,6 +108,7 @@ INSERT INTO nodes (
     'Punto Médico — Plaza Liberación Oriente',
     'medical_point',
     85.0, 50.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6736, -103.3450,        -- 🔧 UPDATE con GPS reales
     NULL,
     'online',
     NULL
@@ -108,6 +120,7 @@ INSERT INTO nodes (
     'Salida de Emergencia — Av. Hidalgo',
     'mobile_unit',
     20.0, 5.0,                -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6760, -103.3490,        -- 🔧 UPDATE con GPS reales
     NULL,
     'online',
     NULL
@@ -123,6 +136,7 @@ INSERT INTO nodes (
     'AVP3-Sim-03 — Rotonda Norte',
     'avp_simulated',
     50.0, 20.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6780, -103.3500,        -- 🔧 UPDATE con GPS reales (Rotonda)
     NULL,
     'online',
     NULL
@@ -134,6 +148,7 @@ INSERT INTO nodes (
     'Punto Médico — Rotonda Sur',
     'medical_point',
     50.0, 80.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6760, -103.3500,        -- 🔧 UPDATE con GPS reales
     NULL,
     'online',
     NULL
@@ -149,6 +164,7 @@ INSERT INTO nodes (
     'AVP3-Sim-04 — Atrio Catedral',
     'avp_simulated',
     50.0, 50.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
+    20.6700, -103.3520,        -- 🔧 UPDATE con GPS reales (Catedral)
     NULL,
     'online',
     NULL
@@ -159,6 +175,8 @@ ON CONFLICT (id) DO UPDATE SET
   type        = EXCLUDED.type,
   x           = EXCLUDED.x,
   y           = EXCLUDED.y,
+  lat         = EXCLUDED.lat,
+  lng         = EXCLUDED.lng,
   lorawan_eui = EXCLUDED.lorawan_eui,
   status      = EXCLUDED.status;
 

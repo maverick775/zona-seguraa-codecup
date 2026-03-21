@@ -1,67 +1,64 @@
-# Supabase Connection Test
+# Database Scripts - Zona SeguRAA
 
-This script tests the connection to your Supabase cloud service using the credentials in your `.env.local` file.
+This directory contains database-related scripts for the Zona SeguRAA project.
 
-## Setup
+## Current Approach: Supabase MCP
 
-1. **Create `.env.local` file** in the `zona-seguraa` directory:
+We now use **Supabase MCP (Model Context Protocol)** for direct database operations:
 
+- **Schema Management**: Use `mcp0_apply_migration` for DDL changes
+- **Data Seeding**: Use `mcp0_apply_migration` for seed data
+- **Database Queries**: Use `mcp0_execute_sql` for custom queries
+- **Health Checks**: Use `mcp0_list_tables` and `curl http://localhost:3000/health`
+
+## MCP Commands Reference
+
+### Schema Operations
+```bash
+# Apply schema changes
+mcp0_apply_migration --project_id=tyqpayvbelcfnwiuzfjt --name=migration_name --query="SQL_HERE"
+
+# List all tables
+mcp0_list_tables --project_id=tyqpayvbelcfnwiuzfjt --schemas=["public"] --verbose=true
+
+# Execute custom SQL
+mcp0_execute_sql --project_id=tyqpayvbelcfnwiuzfjt --query="SELECT * FROM zones"
+```
+
+### Database Reset Workflow
+1. **Drop and Recreate Schema**: Apply migration with DROP/CREATE statements
+2. **Seed Data**: Apply migration with INSERT statements  
+3. **Verify**: Use `mcp0_execute_sql` to run verification queries
+4. **Test**: Check `curl http://localhost:3000/health`
+
+## File References
+
+- **Schema Definition**: `CreatingAgentAssets/db/schema.md`
+- **Seed Data**: `CreatingAgentAssets/seederZS.txt`
+- **Contracts**: `CreatingAgentAssets/contracts/`
+
+## Legacy Scripts (Removed)
+
+The following scripts have been removed as they are now redundant with MCP:
+
+- ~~test-supabase-connection.js~~ → Use MCP health checks
+- ~~run-seeder.js~~ → Use `mcp0_apply_migration`
+- ~~reset-database.js~~ → Use `mcp0_apply_migration`  
+- ~~advanced-reset.js~~ → Use `mcp0_apply_migration`
+
+## Environment Setup
+
+Ensure your `.env.local` contains:
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-2. **Install dependencies** (if not already installed):
+## Development Workflow
 
-```bash
-cd zona-seguraa
-npm install dotenv
-```
-
-## Usage
-
-Run the test script from the `zona-seguraa` directory:
-
-```bash
-node scripts/test-supabase-connection.js
-```
-
-## What the script tests
-
-1. **Environment Variables** - Validates all required Supabase credentials are present
-2. **Connection** - Tests both public (anon) and admin (service role) connections
-3. **Database Schema** - Verifies all required tables exist and are accessible:
-   - zones
-   - nodes
-   - alerts
-   - alert_votes
-   - users_coord
-   - users_temp
-   - iot_uplinks
-4. **Seeded Data** - Validates the data from `seederZS.txt`:
-   - FanFest zone exists
-   - All 8 nodes are present with correct types
-5. **Verification Query** - Runs the same verification query from `seederZS.txt` to confirm data integrity
-
-## Expected Output
-
-If successful, you'll see:
-- ✅ Green checkmarks for passed tests
-- 📊 A table showing all 8 nodes with their details
-- 🎉 Success message at the end
-
-If there are issues, you'll see:
-- ❌ Red error messages with specific failure details
-- ⚠️ Yellow warnings for non-critical issues
-- 💡 Helpful hints for fixing problems
-
-## Troubleshooting
-
-**Missing credentials**: Make sure your `.env.local` file contains all three required variables.
-
-**Connection failed**: Verify your Supabase URL and keys are correct. Check if your project is active.
-
-**Schema errors**: Run the schema creation SQL from `CreatingAgentAssets/db/schema.md` first.
-
-**Missing data**: Run the seed data from `CreatingAgentAssets/seederZS.txt` after creating the schema.
+1. **Schema Changes**: Update `CreatingAgentAssets/db/schema.md`
+2. **Apply Migration**: Use `mcp0_apply_migration` with the schema SQL
+3. **Update Seeds**: Update `CreatingAgentAssets/seederZS.txt` if needed
+4. **Apply Seeds**: Use `mcp0_apply_migration` with seed data
+5. **Verify**: Test with health endpoint and MCP queries

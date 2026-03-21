@@ -27,9 +27,11 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================================
 CREATE TABLE IF NOT EXISTS zones (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  slug        TEXT UNIQUE NOT NULL,
   name        TEXT NOT NULL,
   description TEXT,
   city        TEXT NOT NULL DEFAULT 'Guadalajara',
+  active      BOOLEAN NOT NULL DEFAULT true,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -45,6 +47,8 @@ CREATE TABLE IF NOT EXISTS nodes (
   )),
   x            DOUBLE PRECISION,  -- posición en mapa estático (% del ancho)
   y            DOUBLE PRECISION,  -- posición en mapa estático (% del alto)
+  lat          DOUBLE PRECISION,  -- coordenadas GPS reales
+  lng          DOUBLE PRECISION,  -- coordenadas GPS reales
   lorawan_eui  TEXT,              -- DevEUI si físico, NULL si simulado
   status       TEXT NOT NULL DEFAULT 'offline' CHECK (status IN (
     'online', 'offline', 'alert'

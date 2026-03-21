@@ -13,7 +13,7 @@ Use this workflow when the database schema has changed and you need to rebuild f
 2. Run the full schema SQL from `CreatingAgentAssets/db/schema.md` (copy the SQL block).
    - This uses `CREATE TABLE IF NOT EXISTS` so it is safe to re-run, but if you need a clean slate, drop tables first:
    ```sql
-   DROP TABLE IF EXISTS community_members, communities, votes, alerts, users, nodes, zones CASCADE;
+   DROP TABLE IF EXISTS alert_votes, users_temp, users_coord, alerts, nodes, zones CASCADE;
    ```
 
 3. Run the seed file:
