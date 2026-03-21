@@ -139,15 +139,15 @@ export default function CoordinatorPage() {
   }, [])
 
   const handleAction = async (alertId, newStatus) => {
-    if (!session) return
     setActionLoading(alertId)
     try {
+      const headers = { 'Content-Type': 'application/json' }
+      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`
       const res = await fetch(`/api/alerts/${alertId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        headers,
         body: JSON.stringify({ status: newStatus }),
       })
-      if (res.status === 401) { router.replace('/coordinator/login'); return }
       if (res.ok) await fetchData()
     } catch (err) {
       console.error('[coordinator] action error:', err)
@@ -322,60 +322,52 @@ export default function CoordinatorPage() {
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
             <p className="text-xs uppercase font-semibold text-gray-500 tracking-wider flex items-center gap-1">⚙️ Acciones del Coordinador</p>
-            {!isAuthenticated ? (
-              <Link href="/coordinator/login" className="block w-full py-4 bg-teal-50 border-2 border-teal-300 text-teal-700 rounded-xl font-medium text-center hover:bg-teal-100 transition-colors">
-                🔐 Inicia sesión para gestionar esta alerta
-              </Link>
-            ) : (
-              <>
-                {a.status === 'active' && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => { handleAction(a.id, 'in_progress'); setSelectedAlert({ ...a, status: 'in_progress' }) }}
-                      disabled={actionLoading === a.id}
-                      className="py-3 px-4 bg-green-50 border-2 border-green-500 text-green-700 rounded-xl font-medium hover:bg-green-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      <span>✓</span> Verificar
-                    </button>
-                    <button
-                      onClick={() => handleAction(a.id, 'false_alarm')}
-                      disabled={actionLoading === a.id}
-                      className="py-3 px-4 bg-red-50 border-2 border-red-400 text-red-600 rounded-xl font-medium hover:bg-red-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      <span>✕</span> Cancelar Tipo
-                    </button>
-                  </div>
-                )}
-                {a.status === 'active' && (
-                  <button
-                    onClick={() => { handleAction(a.id, 'in_progress'); setSelectedAlert({ ...a, status: 'in_progress' }) }}
-                    disabled={actionLoading === a.id}
-                    className="w-full py-4 bg-teal-600 text-white rounded-xl font-bold text-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    🚑 Ayuda en Camino
-                  </button>
-                )}
-                {a.status === 'in_progress' && (
-                  <button
-                    onMouseDown={() => startResolveHold(a.id)}
-                    onMouseUp={cancelResolveHold}
-                    onMouseLeave={cancelResolveHold}
-                    onTouchStart={() => startResolveHold(a.id)}
-                    onTouchEnd={cancelResolveHold}
-                    disabled={actionLoading === a.id}
-                    className={`w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${resolveHolding === a.id ? 'bg-green-700 text-white scale-95' : 'bg-green-500 text-white hover:bg-green-600'}`}
-                  >
-                    🏁 Alerta Resuelta
-                    <span className="text-sm font-normal opacity-80">Mantener presionado 3 seg.</span>
-                  </button>
-                )}
-                {(a.status === 'in_progress') && (
-                  <p className="text-xs text-center text-gray-400">Esta acción es irreversible. Mantén presionado para confirmar.</p>
-                )}
-                {(a.status === 'resolved' || a.status === 'false_alarm') && (
-                  <p className="text-sm text-center text-gray-500 py-2">Esta alerta ya fue {a.status === 'resolved' ? 'resuelta' : 'cancelada'}.</p>
-                )}
-              </>
+            {a.status === 'active' && (
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => { handleAction(a.id, 'in_progress'); setSelectedAlert({ ...a, status: 'in_progress' }) }}
+                  disabled={actionLoading === a.id}
+                  className="py-3 px-4 bg-green-50 border-2 border-green-500 text-green-700 rounded-xl font-medium hover:bg-green-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <span>✓</span> Verificar
+                </button>
+                <button
+                  onClick={() => { handleAction(a.id, 'false_alarm'); setSelectedAlert({ ...a, status: 'false_alarm' }) }}
+                  disabled={actionLoading === a.id}
+                  className="py-3 px-4 bg-red-50 border-2 border-red-400 text-red-600 rounded-xl font-medium hover:bg-red-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <span>✕</span> Falsa Alarma
+                </button>
+              </div>
+            )}
+            {a.status === 'active' && (
+              <button
+                onClick={() => { handleAction(a.id, 'in_progress'); setSelectedAlert({ ...a, status: 'in_progress' }) }}
+                disabled={actionLoading === a.id}
+                className="w-full py-4 bg-teal-600 text-white rounded-xl font-bold text-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                🚑 Ayuda en Camino
+              </button>
+            )}
+            {a.status === 'in_progress' && (
+              <button
+                onMouseDown={() => startResolveHold(a.id)}
+                onMouseUp={cancelResolveHold}
+                onMouseLeave={cancelResolveHold}
+                onTouchStart={() => startResolveHold(a.id)}
+                onTouchEnd={cancelResolveHold}
+                disabled={actionLoading === a.id}
+                className={`w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${resolveHolding === a.id ? 'bg-green-700 text-white scale-95' : 'bg-green-500 text-white hover:bg-green-600'}`}
+              >
+                🏁 Alerta Resuelta
+                <span className="text-sm font-normal opacity-80">Mantener presionado 3 seg.</span>
+              </button>
+            )}
+            {a.status === 'in_progress' && (
+              <p className="text-xs text-center text-gray-400">Esta acción es irreversible. Mantén presionado para confirmar.</p>
+            )}
+            {(a.status === 'resolved' || a.status === 'false_alarm') && (
+              <p className="text-sm text-center text-gray-500 py-2">Esta alerta ya fue {a.status === 'resolved' ? 'resuelta' : 'cancelada'}.</p>
             )}
           </div>
         </div>
@@ -720,10 +712,10 @@ export default function CoordinatorPage() {
               <div className="w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-4xl">🛡️</span>
               </div>
-              <h2 className="text-xl font-bold text-gray-900">{isAuthenticated ? 'Coordinador' : 'Modo Visitante'}</h2>
-              <p className="text-sm text-gray-500 mt-1">{isAuthenticated ? (session?.user?.email || 'Sin email') : 'No has iniciado sesión'}</p>
+              <h2 className="text-xl font-bold text-gray-900">Coordinador</h2>
+              <p className="text-sm text-gray-500 mt-1">{session?.user?.email || 'Sesión de demo'}</p>
               <span className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
-                {isAuthenticated ? 'Rol: Coordinador de Seguridad' : 'Solo lectura'}
+                Rol: Coordinador de Seguridad
               </span>
             </div>
 
