@@ -68,7 +68,7 @@ export default function CoordinatorLoginPage() {
                 placeholder="coordinador@zonaseguraa.com"
                 required
                 autoComplete="email"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors bg-white text-gray-900 placeholder:text-gray-400"
               />
             </div>
 
@@ -85,7 +85,7 @@ export default function CoordinatorLoginPage() {
                 required
                 autoComplete="current-password"
                 minLength={6}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors bg-white text-gray-900 placeholder:text-gray-400"
               />
             </div>
 

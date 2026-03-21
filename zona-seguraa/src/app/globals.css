@@ -55,3 +55,8 @@ input,
 textarea {
   color: #1d1d1f;
 }
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;
+}

@@ -145,7 +145,7 @@ export default function AlertCreatePage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe lo que está ocurriendo..."
             rows={4}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none bg-white text-gray-900 placeholder:text-gray-400"
           />
         </div>
 
