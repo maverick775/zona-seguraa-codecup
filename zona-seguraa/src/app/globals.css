@@ -1,13 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9fa;
+  --foreground: #1d1d1f;
+  --primary-teal: #2b7a78;
+  --emergency-red: #e63946;
+  --admin-purple: #a020f0;
+  --ally-blue: #3a86ff;
+  --bg-light: #f8f9fa;
+  --text-dark: #1d1d1f;
+  --text-muted: #6c757d;
+  --border-light: #e9ecef;
+  --alert-low: #f2c94c;
+  --alert-medium: #f2994a;
+  --alert-high: #e63946;
+  --alert-critical: #e63946;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary-teal: var(--primary-teal);
+  --color-emergency-red: var(--emergency-red);
+  --color-admin-purple: var(--admin-purple);
+  --color-ally-blue: var(--ally-blue);
+  --color-bg-light: var(--bg-light);
+  --color-text-dark: var(--text-dark);
+  --color-text-muted: var(--text-muted);
+  --color-border-light: var(--border-light);
+  --color-alert-low: var(--alert-low);
+  --color-alert-medium: var(--alert-medium);
+  --color-alert-high: var(--alert-high);
+  --color-alert-critical: var(--alert-critical);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
