@@ -150,7 +150,7 @@ export default function HomePage() {
                         Nivel {levelLabels[alert.level] || alert.level}
                       </span>
                       {alert.node && (
-                        <span className="text-xs text-gray-400 ml-2">• {alert.node.name}</span>
+                        <span className="text-xs text-gray-600 ml-2">• {alert.node.name}</span>
                       )}
                     </div>
                   </div>

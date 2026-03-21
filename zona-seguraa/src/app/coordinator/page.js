@@ -86,20 +86,15 @@ export default function CoordinatorPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (!document.querySelector('link[href*="leaflet"]')) {
-      const link = document.createElement('link')
-      link.rel = 'stylesheet'
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-      document.head.appendChild(link)
-    }
+    import('leaflet/dist/leaflet.css')
     if (!iconFixRef.current) {
       iconFixRef.current = true
       import('leaflet').then((L) => {
         delete L.default.Icon.Default.prototype._getIconUrl
         L.default.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+          iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+          iconUrl: '/leaflet/marker-icon.png',
+          shadowUrl: '/leaflet/marker-shadow.png',
         })
         setMapReady(true)
       })
@@ -282,7 +277,7 @@ export default function CoordinatorPage() {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-            <p className="text-xs uppercase font-semibold text-gray-500 tracking-wider">Información de la Alerta</p>
+            <p className="text-xs uppercase font-semibold text-gray-600 tracking-wider">Información de la Alerta</p>
             <div className="space-y-2 text-sm">
               {a.node && (
                 <div className="flex items-start gap-2">
@@ -334,11 +329,11 @@ export default function CoordinatorPage() {
             )}
             {votes.filter(v => v.comment).length > 0 && (
               <div className="mt-3 space-y-2">
-                <p className="text-xs uppercase font-semibold text-gray-400 tracking-wider">Comentarios</p>
+                <p className="text-xs uppercase font-semibold text-gray-600 tracking-wider">Comentarios</p>
                 {votes.filter(v => v.comment).slice(0, 5).map((v, i) => (
                   <div key={v.id || i} className="border-l-2 border-teal-300 pl-3 py-1">
                     <p className="text-sm text-gray-700">{v.comment}</p>
-                    <p className="text-xs text-gray-400">{v.nickname}{v.role === 'coordinator' ? ' (Coord.)' : ''} · {getTimeAgo(v.created_at)}</p>
+                    <p className="text-xs text-gray-500">{v.nickname}{v.role === 'coordinator' ? ' (Coord.)' : ''} · {getTimeAgo(v.created_at)}</p>
                   </div>
                 ))}
               </div>
@@ -350,7 +345,7 @@ export default function CoordinatorPage() {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-            <p className="text-xs uppercase font-semibold text-gray-500 tracking-wider flex items-center gap-1">⚙️ Acciones del Coordinador</p>
+            <p className="text-xs uppercase font-semibold text-gray-600 tracking-wider flex items-center gap-1">⚙️ Acciones del Coordinador</p>
             {a.status === 'active' && (
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -463,7 +458,7 @@ export default function CoordinatorPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-semibold text-gray-500 uppercase">Alertas Activas</p>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Alertas Activas</p>
                   <span className="text-red-500">⚠️</span>
                 </div>
                 <p className="text-3xl font-bold text-gray-900">{activeAlerts.length}</p>
@@ -471,7 +466,7 @@ export default function CoordinatorPage() {
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-semibold text-gray-500 uppercase">Resueltas Hoy</p>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Resueltas Hoy</p>
                   <span className="text-green-500">✅</span>
                 </div>
                 <p className="text-3xl font-bold text-gray-900">{resolvedToday.length}</p>
@@ -479,7 +474,7 @@ export default function CoordinatorPage() {
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-semibold text-gray-500 uppercase">Tiempo Prom.</p>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Tiempo Prom.</p>
                   <span className="text-blue-500">🕐</span>
                 </div>
                 <p className="text-3xl font-bold text-gray-900">{getAvgResponseTime(alerts)}</p>
@@ -487,7 +482,7 @@ export default function CoordinatorPage() {
               </div>
               <div className="bg-white rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-semibold text-gray-500 uppercase">Personal Zona</p>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Personal Zona</p>
                   <span className="text-orange-500">👥</span>
                 </div>
                 <p className="text-3xl font-bold text-gray-900">{nodes.filter((n) => n.status === 'online').length}</p>
@@ -548,8 +543,8 @@ export default function CoordinatorPage() {
                           </div>
                           <p className="text-xs text-gray-500 mt-0.5">📍 {a.node?.name || 'Sin ubicación'}</p>
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs text-gray-400">🕐 {getTimeAgo(a.created_at)}</span>
-                            <span className="text-xs text-gray-400">👥 {a.votes_total_weight || 0} verificaciones</span>
+                            <span className="text-xs text-gray-500">🕐 {getTimeAgo(a.created_at)}</span>
+                            <span className="text-xs text-gray-500">👥 {a.votes_total_weight || 0} verificaciones</span>
                           </div>
                         </div>
                       </div>
@@ -621,7 +616,7 @@ export default function CoordinatorPage() {
                     className={`w-full text-left bg-white rounded-xl border-l-4 border border-gray-200 ${alertBorderColor(a)} p-4 hover:shadow-md transition-shadow`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-gray-400 uppercase tracking-wider">{a.id.slice(0, 13).toUpperCase()}</span>
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider">{a.id.slice(0, 13).toUpperCase()}</span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${STATUS_BADGE[a.status]}`}>
                         <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${STATUS_DOT[a.status]}`} />{STATUS_LABELS[a.status]}
                       </span>
@@ -633,8 +628,8 @@ export default function CoordinatorPage() {
                         <p className="text-xs text-gray-500">{TYPE_LABELS[a.type]}</p>
                         <p className="text-xs text-gray-500 mt-1">📍 {a.node?.name || 'Sin ubicación'}</p>
                         <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs text-gray-400">🕐 {getTimeAgo(a.created_at)}</span>
-                          <span className="text-xs text-gray-400">👥 {a.votes_total_weight || 0} ciudadanos verificaron</span>
+                          <span className="text-xs text-gray-500">🕐 {getTimeAgo(a.created_at)}</span>
+                          <span className="text-xs text-gray-500">👥 {a.votes_total_weight || 0} ciudadanos verificaron</span>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
@@ -675,7 +670,7 @@ export default function CoordinatorPage() {
               )}
             </div>
 
-            <p className="text-xs uppercase font-semibold text-gray-400 tracking-wider">Sectores de Cobertura</p>
+            <p className="text-xs uppercase font-semibold text-gray-600 tracking-wider">Sectores de Cobertura</p>
             {nodes.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-4">No hay nodos registrados</p>
             ) : (
@@ -712,7 +707,7 @@ export default function CoordinatorPage() {
               </div>
             )}
 
-            <p className="text-xs uppercase font-semibold text-gray-400 tracking-wider mt-6">Contactos de Respuesta Rápida</p>
+            <p className="text-xs uppercase font-semibold text-gray-600 tracking-wider mt-6">Contactos de Respuesta Rápida</p>
             <div className="space-y-2">
               {[
                 { name: 'Guardia Principal', sub: 'Puesto Central', phone: '311', online: true },
@@ -754,7 +749,7 @@ export default function CoordinatorPage() {
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-              <p className="text-xs uppercase font-semibold text-gray-400 tracking-wider">Estadísticas de sesión</p>
+              <p className="text-xs uppercase font-semibold text-gray-600 tracking-wider">Estadísticas de sesión</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center p-3 bg-gray-50 rounded-lg">
                   <p className="text-2xl font-bold text-gray-900">{alerts.length}</p>

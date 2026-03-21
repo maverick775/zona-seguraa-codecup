@@ -38,21 +38,15 @@ export default function ZonePage() {
   const iconFixRef = useRef(false);
 
   useEffect(() => {
-    // Load Leaflet CSS via CDN link tag
-    if (!document.querySelector('link[href*="leaflet"]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
+    import('leaflet/dist/leaflet.css');
     if (!iconFixRef.current) {
       iconFixRef.current = true;
       import('leaflet').then((L) => {
         delete L.default.Icon.Default.prototype._getIconUrl;
         L.default.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+          iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+          iconUrl: '/leaflet/marker-icon.png',
+          shadowUrl: '/leaflet/marker-shadow.png',
         });
         setMapReady(true);
       });
@@ -170,7 +164,7 @@ export default function ZonePage() {
                   <div className="flex items-center mt-1">
                     <div className={`w-2 h-2 rounded-full mr-1 ${levelColors[alert.level] || 'bg-gray-400'}`} />
                     <span className="text-xs text-gray-500">Nivel {levelLabels[alert.level] || alert.level}</span>
-                    <span className="text-xs text-gray-400 ml-2">• {alert.status === 'in_progress' ? 'En Progreso' : 'Activa'}</span>
+                    <span className="text-xs text-gray-600 ml-2">• {alert.status === 'in_progress' ? 'En Progreso' : 'Activa'}</span>
                   </div>
                 </div>
               </div>
