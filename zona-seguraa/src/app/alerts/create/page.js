@@ -125,11 +125,11 @@ export default function AlertCreatePage() {
           <select
             value={selectedNode}
             onChange={(e) => setSelectedNode(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white text-gray-900"
           >
-            <option value="">Selecciona un nodo...</option>
+            <option value="" className="text-gray-500">Selecciona un nodo...</option>
             {nodes.map((node) => (
-              <option key={node.id} value={node.id}>
+              <option key={node.id} value={node.id} className="text-gray-900">
                 {node.name}
               </option>
             ))}

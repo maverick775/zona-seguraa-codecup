@@ -461,10 +461,10 @@ export default function AlertDetailPage() {
                 <select
                   value={tempLanguage}
                   onChange={(e) => setTempLanguage(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2 mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded-lg p-2 mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                 >
-                  <option value="es">Español</option>
-                  <option value="en">English</option>
+                  <option value="es" className="text-gray-900">Español</option>
+                  <option value="en" className="text-gray-900">English</option>
                 </select>
 
                 {aliasError && (
