@@ -1,44 +1,44 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { createClient } from '@/lib/supabase';
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase'
 
-const ZONE_ID = 'a1000000-0000-0000-0000-000000000001';
+const ZONE_ID = 'a1000000-0000-0000-0000-000000000001'
 
 const typeLabels = {
   medical: 'Emergencia Médica',
   security: 'Seguridad',
   fire: 'Incendio',
   evacuation: 'Evacuación',
-};
-const typeIcons = { medical: '🏥', security: '🚨', fire: '🔥', evacuation: '🚪' };
-const levelColors = { 1: 'bg-yellow-400', 2: 'bg-orange-400', 3: 'bg-red-500' };
-const levelLabels = { 1: 'Bajo', 2: 'Medio', 3: 'Alto' };
+}
+const typeIcons = { medical: '🏥', security: '🚨', fire: '🔥', evacuation: '🚪' }
+const levelColors = { 1: 'bg-yellow-400', 2: 'bg-orange-400', 3: 'bg-red-500' }
+const levelLabels = { 1: 'Bajo', 2: 'Medio', 3: 'Alto' }
 
 export default function AlertValidationPage() {
-  const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [votedAlerts, setVotedAlerts] = useState({});
-  const [votingId, setVotingId] = useState(null);
+  const router = useRouter()
+  const [alerts, setAlerts] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const fetchAlerts = async () => {
     try {
-      const res = await fetch(`/api/alerts?zone_id=${ZONE_ID}`);
+      const res = await fetch(`/api/alerts?zone_id=${ZONE_ID}`)
       if (res.ok) {
-        const data = await res.json();
-        setAlerts(data);
+        const data = await res.json()
+        setAlerts(data)
       }
     } catch (err) {
-      console.error('Error loading alerts:', err);
+      console.error('Error loading alerts:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchAlerts();
-    const supabase = createClient();
+    fetchAlerts()
+    const supabase = createClient()
     const channel = supabase
       .channel('validation-alerts')
       .on(
@@ -48,41 +48,12 @@ export default function AlertValidationPage() {
       )
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'alert_votes' },
+        { event: '*', schema: 'public', table: 'alert_votes' },
         () => fetchAlerts()
       )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  const handleVote = async (alertId) => {
-    setVotingId(alertId);
-    try {
-      const res = await fetch('/api/votes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          alert_id: alertId,
-          nickname: 'visitante_demo',
-          role: 'visitor',
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setVotedAlerts((prev) => ({ ...prev, [alertId]: true }));
-        if (data.alert) {
-          setAlerts((prev) =>
-            prev.map((a) => (a.id === alertId ? { ...a, level: data.alert.level } : a))
-          );
-        }
-      }
-    } catch (err) {
-      console.error('Error voting:', err);
-    } finally {
-      setVotingId(null);
-    }
-  };
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   if (loading) {
     return (
@@ -140,27 +111,13 @@ export default function AlertValidationPage() {
                   </div>
                 )}
 
-                {votedAlerts[alert.id] ? (
-                  <div className="flex items-center p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <span className="text-green-600 font-bold mr-2">✓</span>
-                    <span className="text-green-800 font-medium">Tu validación ha sido registrada</span>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleVote(alert.id)}
-                    disabled={votingId === alert.id}
-                    className="w-full py-3 px-4 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors disabled:bg-gray-300 flex items-center justify-center"
-                  >
-                    {votingId === alert.id ? (
-                      'Enviando...'
-                    ) : (
-                      <>
-                        <span className="mr-2">✓</span>
-                        Confirmar esta alerta
-                      </>
-                    )}
-                  </button>
-                )}
+                <Link
+                  href={`/alert/${alert.id}`}
+                  className="w-full py-3 px-4 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center justify-center"
+                >
+                  <span className="mr-2">👁️</span>
+                  Ver detalle y validar
+                </Link>
               </div>
             </div>
           ))}

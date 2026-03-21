@@ -150,7 +150,7 @@ export default function HomePage() {
                         Nivel {levelLabels[alert.level] || alert.level}
                       </span>
                       {alert.node && (
-                        <span className="text-xs text-gray-400 ml-2">• {alert.node.name}</span>
+                        <span className="text-xs text-gray-600 ml-2">• {alert.node.name}</span>
                       )}
                     </div>
                   </div>
@@ -178,7 +178,7 @@ export default function HomePage() {
             Ver Mapa de Zona
           </Link>
           <Link
-            href="/coordinator/login"
+            href="/coordinator"
             className="block w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium text-center hover:bg-gray-200 transition-colors"
           >
             Acceso Coordinador

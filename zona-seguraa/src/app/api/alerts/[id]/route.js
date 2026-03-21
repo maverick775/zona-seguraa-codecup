@@ -53,17 +53,15 @@ export async function PATCH(request, { params }) {
     }
   }
 
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
-
-  const token = authHeader.replace('Bearer ', '');
   const supabase = createServerClient();
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  // Auth optional for demo — try to extract user if token present
+  let userId = null;
+  const authHeader = request.headers.get('authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (user) userId = user.id;
   }
 
   const { data: existing, error: fetchError } = await supabase
@@ -83,11 +81,11 @@ export async function PATCH(request, { params }) {
   if (status) {
     updateData.status = status;
     if (status === 'in_progress') {
-      updateData.attended_by = user.id;
+      updateData.attended_by = userId || existing.attended_by;
     }
     if (status === 'resolved') {
       updateData.resolved_at = new Date().toISOString();
-      updateData.attended_by = user.id;
+      updateData.attended_by = userId || existing.attended_by;
     }
   }
 
