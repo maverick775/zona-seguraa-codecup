@@ -1,6 +1,35 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
 
+export async function GET(request, { params }) {
+  const { id } = await params;
+  const supabase = createServerClient();
+
+  const { data: alert, error } = await supabase
+    .from('alerts')
+    .select('*, node:nodes(id, name, type, lat, lng)')
+    .eq('id', id)
+    .single();
+
+  if (error || !alert) {
+    return NextResponse.json({ error: 'alert not found' }, { status: 404 });
+  }
+
+  const { data: votes } = await supabase
+    .from('alert_votes')
+    .select('*')
+    .eq('alert_id', id)
+    .order('created_at', { ascending: false });
+
+  const totalWeight = (votes || []).reduce((sum, v) => sum + v.weight, 0);
+
+  return NextResponse.json({
+    ...alert,
+    votes: votes || [],
+    votes_total_weight: totalWeight
+  });
+}
+
 export async function PATCH(request, { params }) {
   const { id } = await params;
   const body = await request.json();
@@ -24,17 +53,15 @@ export async function PATCH(request, { params }) {
     }
   }
 
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
-
-  const token = authHeader.replace('Bearer ', '');
   const supabase = createServerClient();
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  // Auth optional for demo — try to extract user if token present
+  let userId = null;
+  const authHeader = request.headers.get('authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (user) userId = user.id;
   }
 
   const { data: existing, error: fetchError } = await supabase
@@ -54,11 +81,11 @@ export async function PATCH(request, { params }) {
   if (status) {
     updateData.status = status;
     if (status === 'in_progress') {
-      updateData.attended_by = user.id;
+      updateData.attended_by = userId || existing.attended_by;
     }
     if (status === 'resolved') {
       updateData.resolved_at = new Date().toISOString();
-      updateData.attended_by = user.id;
+      updateData.attended_by = userId || existing.attended_by;
     }
   }
 

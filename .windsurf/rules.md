@@ -1,69 +1,151 @@
-# Zona SeguRAA — Reglas Globales del Agente
+# Zona SeguRAA — Windsurf Rules
+### Reglas para agentes de IA en este proyecto · Actualizado: 21 Mar 2026
 
-## Identidad del proyecto
-- **Nombre:** Zona SeguRAA · CodeCup 2026
-- **Venue demo:** FanFest FIFA 2026 — Centro Histórico GDL
-- **Propósito:** red colaborativa de alerta ciudadana para zonas públicas abiertas con validación comunitaria e IoT LoRaWAN
+---
 
-## Stack obligatorio
-- **Runtime:** Node.js 20+
-- **Framework:** Next.js 14 App Router — JavaScript puro (sin TypeScript)
-- **Estilos:** Tailwind CSS v4+ con tokens definidos en `src/styles/tokens.css`
-- **Base de datos:** Supabase PostgreSQL con Realtime habilitado
-- **Mapas:** Leaflet + react-leaflet (SSR fix en `lib/leaflet-config.js`)
-- **IoT:** LoRaWAN US915 → Loriot Network Server → webhook `/api/iot/uplink`
-- **Deploy:** Vercel (frontend + API) · Supabase Cloud
+## Contexto del Proyecto
 
-## Reglas de código
-1. Usar alias `@/*` → `src/*` y `@/lib/*` → `lib/*`; nunca rutas relativas con `../`.
-2. API responses siempre con `NextResponse.json()`; nunca `Response` nativo.
-3. Documentar solo el **por qué** de una decisión, no el qué hace el código.
-4. Funciones aisladas y reutilizables; inyectar dependencias por argumento.
-5. Imports siempre al inicio del archivo; nunca en medio del código.
-6. No agregar emojis a archivos de código a menos que se solicite explícitamente.
-7. Nombres descriptivos en inglés para variables/funciones; UI strings en español.
+Zona SeguRAA es un MVP de seguridad comunitaria para el **FanFest FIFA World Cup 2026** en la **Plaza de la Liberación, Guadalajara**. Se presenta en CodeCup el **sábado 21 de marzo de 2026**.
 
-## Reglas de datos
-1. Esquema canónico: `CreatingAgentAssets/db/schema.md` — toda modificación de tablas debe reflejarse ahí primero.
-2. Seed canónico: `CreatingAgentAssets/seederZS.txt` — debe mantenerse consistente con el schema.
-3. Al modificar el schema: purgar DB → recrear tablas → re-ejecutar seed.
+**Stack:** Next.js 14 App Router · JavaScript (no TypeScript) · Tailwind CSS · Supabase (PostgreSQL + Realtime) · Leaflet.js · Vercel
 
-## Reglas de contratos FE/BE
-1. Cada pantalla tiene su contrato en `CreatingAgentAssets/contracts/*.md`.
-2. No se codifica UI ni API sin contrato aprobado por ambos equipos.
-3. Los contratos se comparten vía commits en git; la contraparte los descarga para sincronizar.
+---
 
-## Paleta de colores
-```css
-:root {
-  --primary-teal: #2b7a78;
-  --emergency-red: #e63946;
-  --admin-purple: #a020f0;
-  --ally-blue: #3a86ff;
-  --bg-light: #f8f9fa;
-  --text-dark: #1d1d1f;
-  --text-muted: #6c757d;
-  --border-light: #e9ecef;
-}
+## Reglas Generales — SIEMPRE
+
+1. **JavaScript puro.** Nunca generar archivos `.ts` o `.tsx`. Sin anotaciones de tipo ni interfaces TypeScript.
+2. **App Router de Next.js 14.** Estructura `app/` con `page.js`, `layout.js`, `route.js`. No usar `pages/`.
+3. **Componentes cliente vs servidor:**
+   - Agregar `'use client'` a cualquier componente con hooks, estado, eventos o Leaflet.
+   - Las API routes (`app/api/**/route.js`) son siempre servidor.
+4. **Supabase browser client** → solo en componentes `'use client'`:
+   ```javascript
+   import { createClient } from '@/lib/supabase'
+   ```
+5. **Supabase server client** → solo en `app/api/**/route.js`:
+   ```javascript
+   import { createServerClient } from '@/lib/supabase-server'
+   ```
+6. **Tailwind para estilos.** No crear archivos CSS adicionales. No usar `style={{}}` inline salvo para el div del mapa Leaflet.
+7. **NextResponse.json()** en todas las respuestas de API routes.
+
+---
+
+## Alcance del Demo — CRÍTICO
+
+### EN SCOPE (modificar libremente)
+- Flujo visitante: `/join` → `/zone/[id]` → `/alert/new` → `/alert/[id]`
+- Flujo coordinador: `/coordinator/dashboard` → `/coordinator/alert/[id]`
+- APIs: `/api/alerts`, `/api/votes`, `/api/nodes`, `/api/users/temp`
+- Mapa Leaflet con nodos como círculos de 150m en Plaza Liberación
+- Hooks: `useRealtimeAlerts`, `useRealtimeNodes`
+
+### FUERA DE SCOPE — No tocar para la demo
+- `/api/iot/uplink` y `/api/iot/downlink`
+- `lib/loriot.js` — no importar en el flujo principal
+- Variables de entorno `LORIOT_*`
+- Scripts de simulación automática (`demo-mode.js`)
+
+### Auth de coordinadores (SIMPLIFICADO para demo)
+- El dashboard `/coordinator/dashboard` debe ser **accesible sin login**
+- Eliminar o comentar cualquier middleware de protección en rutas `/coordinator/*`
+- No agregar nueva auth hasta después del CodeCup
+
+---
+
+## Mapa: Plaza Liberación FanFest
+
+- **Centro:** `[20.6770, -103.3458]`
+- **Zoom:** 17
+- **Tiles:** OpenStreetMap
+- **Representación de nodos:** `L.circle([lat, lng], { radius: 150 })`
+- **Campos de posición en DB:** `node.lat` y `node.lng` (NO `node.x` / `node.y`)
+- **Colores por tipo:**
+  - `avp_physical`: `#ef4444` (rojo)
+  - `avp_simulated`: `#3b82f6` (azul)
+  - `medical_point`: `#10b981` (verde)
+  - `exit`: `#f59e0b` (amarillo)
+- **Estado alert:** color `#ef4444` con `fillOpacity: 0.4`
+- Importar Leaflet solo con `require('leaflet')` dentro de `useEffect`
+
+---
+
+## Contratos de API
+
+### POST /api/votes — Incluir escalado automático
+```javascript
+// Después de insertar el voto
+const { data: votes } = await supabase.from('alert_votes').select('weight').eq('alert_id', alertId)
+const total = votes.reduce((s, v) => s + v.weight, 0)
+if (total >= 3) await supabase.from('alerts').update({ level: 2 }).eq('id', alertId).lt('level', 2)
 ```
 
-## Niveles de alerta
-| Nivel | Nombre | Color | Notificación |
-|-------|--------|-------|-------------|
-| 1 | Aviso (Bajo) | Amarillo `#f4a261` | Vibración suave |
-| 2 | Advertencia (Medio) | Naranja `#e76f51` | Push notification |
-| 3 | Peligro (Alto) | Rojo `#e63946` | Sonido + vibración |
-| 4 | Emergencia | Rojo intenso `#d00000` | Sonido persistente |
-| 5 | Crisis (Crítico) | Rojo + estrobo `#9d0208` | Sonido + estrobo + SMS |
+### PATCH /api/alerts/[id] — Estados válidos
+```javascript
+// status acepta: 'active' | 'in_progress' | 'resolved' | 'false_alarm'
+// level acepta: 1 | 2 | 3
+```
 
-## Accesibilidad
-- Botón SOS activable en <1 s con pulsación prolongada 3 s para blindaje contra falsas alarmas.
-- Soporte alto contraste, TTS y vibración escalable.
-- `aria-live` en componentes de alerta; `prefers-reduced-motion` respetado.
-- Mensajes calmados: "Respira y sigue instrucciones".
+### GET /api/alerts — Query params esperados
+```
+?zone_id=<uuid>            → alertas de la zona
+?status=active             → filtrar por estado
+?include_votes=true        → incluir alert_votes relacionados
+```
 
-## Límites del agente
-- No hacer commits — se manejan manualmente.
-- No modificar archivos fuera de `zona-seguraa-codecup/` a menos que se indique explícitamente.
-- Consultar `CreatingAgentAssets/runbook.md` para alcance detallado de acciones permitidas.
-- Verbosidad mínima; funcionalidad sobre modularidad excesiva.
+### GET /api/nodes — Query params esperados
+```
+?zone_id=<uuid>            → nodos de la zona
+```
+
+---
+
+## Realtime + Fallback Manual
+
+Estrategia aceptada para la demo:
+
+```javascript
+// Patrón estándar — usar en zona y dashboard
+async function fetchAlerts() {
+  const res = await fetch(`/api/alerts?zone_id=${zoneId}`)
+  setAlerts(await res.json())
+}
+
+useEffect(() => {
+  fetchAlerts()
+  const supabase = createClient()
+  const ch = supabase.channel(`alerts-${zoneId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'alerts', filter: `zone_id=eq.${zoneId}` },
+      () => fetchAlerts())
+    .subscribe()
+  return () => supabase.removeChannel(ch)
+}, [zoneId])
+
+// UI: agregar botón "Actualizar" visible para fallback controlado
+<button onClick={fetchAlerts}>↻ Actualizar</button>
+```
+
+---
+
+## Prioridad de Tareas (orden estricto)
+
+1. **P0** — Reparar `/coordinator/dashboard` (404) — SIN auth
+2. **P0** — `POST /api/votes` recalcula y actualiza `alerts.level`
+3. **P0** — Crear `/alert/[id]/page.js` con votos/comentarios
+4. **P1** — Crear `/join/page.js` + `POST /api/users/temp`
+5. **P1** — Mapa con `L.circle` 150m usando `lat`/`lng` reales de Plaza Liberación
+6. **P1** — Realtime + botón refresh en dashboard y zona
+7. **P1** — Botones de coordinador: `En Atención`, `Resolver` en dashboard
+8. **P2** — Polish: etiquetas ES/EN, colores de nivel, cronómetro
+
+---
+
+## Errores a Evitar
+
+- No usar `createBrowserClient` en API routes
+- No usar `node.x` / `node.y` para posición (usar `node.lat` / `node.lng`)
+- No importar Leaflet en server components
+- No bloquear dashboard con auth
+- No depender de `LORIOT_*` en el flujo principal
+- No olvidar `.select()` después de `.insert()` cuando se necesita el objeto creado
+
