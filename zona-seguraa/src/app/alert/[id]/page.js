@@ -402,7 +402,7 @@ export default function AlertDetailPage() {
                     <textarea
                       value={voteComment}
                       onChange={(e) => setVoteComment(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder:text-gray-400"
                       rows={3}
                       placeholder="Describe lo que observas o cualquier información adicional..."
                     />
@@ -450,7 +450,7 @@ export default function AlertDetailPage() {
                   type="text"
                   value={tempNickname}
                   onChange={(e) => setTempNickname(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2 mb-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 rounded-lg p-2 mb-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder:text-gray-400"
                   placeholder="Ej: Juan, Vecino23, etc."
                   maxLength={50}
                 />
