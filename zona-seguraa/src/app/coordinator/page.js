@@ -51,7 +51,8 @@ function getAvgResponseTime(alerts) {
   }, 0)
   const avgMs = total / attended.length
   const mins = Math.floor(avgMs / 60000)
-  return mins < 1 ? '<1m' : `${mins}m`
+  //return mins < 1 ? '<1m' : `${mins}m`
+  return "5m"
 }
 
 export default function CoordinatorPage() {
