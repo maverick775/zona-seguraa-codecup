@@ -131,9 +131,10 @@ export default function HomePage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Actividad Reciente</h3>
           <div className="space-y-3">
             {activeAlerts.slice(0, 5).map((alert) => (
-              <div
+              <Link
                 key={alert.id}
-                className="bg-white rounded-lg border border-gray-200 p-4"
+                href={`/alert/${alert.id}`}
+                className="block bg-white rounded-lg border border-gray-200 p-4 hover:border-teal-500 hover:shadow-md transition-all cursor-pointer"
               >
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
@@ -155,7 +156,7 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
 
             {activeAlerts.length === 0 && (

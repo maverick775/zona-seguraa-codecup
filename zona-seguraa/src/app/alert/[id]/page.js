@@ -246,7 +246,7 @@ export default function AlertDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-md mx-auto px-4 py-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="h-48 bg-gray-200 rounded mb-4"></div>
@@ -258,7 +258,7 @@ export default function AlertDetailPage() {
 
   if (error) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-md mx-auto px-4 py-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-800 text-lg mb-4">{error}</p>
           <button
@@ -274,7 +274,7 @@ export default function AlertDetailPage() {
 
   if (!alert) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-md mx-auto px-4 py-6">
         <p className="text-gray-600 text-center">Alerta no encontrada</p>
       </div>
     )
@@ -282,7 +282,7 @@ export default function AlertDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-md mx-auto px-4 py-6">
         {/* Botón Volver */}
         <button
           onClick={() => router.back()}

@@ -153,7 +153,11 @@ export default function ZonePage() {
         <div className="space-y-3 mb-20">
           <h3 className="text-lg font-semibold text-gray-900">Alertas Activas</h3>
           {activeAlerts.map((alert) => (
-            <div key={alert.id} className="bg-white rounded-lg border border-gray-200 p-4">
+            <Link
+              key={alert.id}
+              href={`/alert/${alert.id}`}
+              className="block bg-white rounded-lg border border-gray-200 p-4 hover:border-teal-500 hover:shadow-md transition-all cursor-pointer"
+            >
               <div className="flex items-start">
                 <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
                   <span className="text-lg">{typeIcons[alert.type] || '⚠️'}</span>
@@ -168,7 +172,7 @@ export default function ZonePage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
           {activeAlerts.length === 0 && (
             <div className="text-center py-6 text-gray-500">No hay alertas activas</div>
