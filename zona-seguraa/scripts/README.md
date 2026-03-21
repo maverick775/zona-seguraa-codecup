@@ -34,15 +34,14 @@ node scripts/test-supabase-connection.js
 3. **Database Schema** - Verifies all required tables exist and are accessible:
    - zones
    - nodes
-   - users
    - alerts
-   - votes
-   - communities
-   - community_members
+   - alert_votes
+   - users_coord
+   - users_temp
+   - iot_uplinks
 4. **Seeded Data** - Validates the data from `seederZS.txt`:
-   - Chapultepec zone exists
+   - FanFest zone exists
    - All 8 nodes are present with correct types
-   - Users and communities are properly seeded
 5. **Verification Query** - Runs the same verification query from `seederZS.txt` to confirm data integrity
 
 ## Expected Output

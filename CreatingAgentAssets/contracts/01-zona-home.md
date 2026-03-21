@@ -25,7 +25,7 @@ Obtiene datos de la zona activa con conteo de nodos y alertas.
   "data": {
     "id": "uuid",
     "slug": "chapultepec",
-    "name": "Corredor Chapultepec",
+    "name": "FanFest",
     "active": true,
     "nodes_count": 8,
     "active_alerts_count": 5

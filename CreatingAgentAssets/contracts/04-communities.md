@@ -30,7 +30,7 @@ Lista comunidades con conteo de miembros y alertas activas.
     {
       "id": "uuid",
       "name": "Residencial Los Pinos",
-      "zone_name": "Corredor Chapultepec",
+      "zone_name": "FanFest",
       "status": "active",
       "members_present": 24,
       "members_total": 87,

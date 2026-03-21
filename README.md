@@ -1,7 +1,7 @@
 # Zona SeguRAA — CodeCup 2026
 
 > **Red colaborativa de alerta para zonas públicas abiertas**  
-> Demo venue: **Corredor Chapultepec — Zona Centro de Guadalajara (ZMG)** · 24/7 · flujo ciudadano distribuido
+> Demo venue: **Fan Fest— Zona Centro de Guadalajara (ZMG)** · 24/7 · flujo ciudadano distribuido
 
 [![Estado](https://img.shields.io/badge/Sprint-1%20Backend-blue)]()
 [![Deploy](https://img.shields.io/badge/Deploy-Vercel-black)]()
@@ -57,7 +57,7 @@ CreatingAgentAssets/
 ├── db/schema.md               # Contrato del modelo de datos
 ├── contracts/                 # Contratos FE/BE por pantalla
 ├── runbook.md                 # Alcance permitido para el agente
-└── seederZS.txt               # Zona pública (Corredor Chapultepec)
+└── seederZS.txt               # Zona pública (FanFest)
 ```
 
 ---

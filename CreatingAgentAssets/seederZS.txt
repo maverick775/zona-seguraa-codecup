@@ -1,255 +1,196 @@
 -- ============================================================
 -- SEED DATA · Zona SeguRAA · CodeCup 2026
--- Venue: Corredor Chapultepec — Zona Centro de Guadalajara
--- Datos dummy marcados con 🔧 UPDATE para reemplazar después
+-- Venue: FanFest FIFA 2026 — Centro Histórico de Guadalajara
+-- ⚠️  Coordenadas GPS y pos x/y marcadas con 🔧 UPDATE
+--     corresponden a los archivos CSV exportados de Google My Maps:
+--     - FanFest Mundial 2026 - Zonas FanFest.csv
+--     - FanFest Mundial 2026 - Nodos de Alarma.csv
 -- ============================================================
 
 
 -- ============================================================
--- 1. ZONA: Corredor Chapultepec
+-- 1. ZONAS DEL FANFEST
+-- Cada zona corresponde a un polígono del CSV "Zonas FanFest"
 -- ============================================================
 
-INSERT INTO zones (
-  id,
-  slug,
-  name,
-  description,
-  city,
-  lat,
-  lng,
-  active
-) VALUES (
-  'a1000000-0000-0000-0000-000000000001',
-  'chapultepec',
-  'Corredor Chapultepec — Zona Centro GDL',
-  'Corredor peatonal y cultural de libre acceso en la Zona Centro de Guadalajara. Flujo ciudadano distribuido 24/7. Zona de demostración del sistema Zona SeguRAA para CodeCup 2026.',
-  'Guadalajara',
-  20.67320,
-  -103.36850,
-  true
-)
-ON CONFLICT (slug) DO UPDATE SET
+INSERT INTO zones (id, name, description, city) VALUES
+
+  (
+    'a1000000-0000-0000-0000-000000000001',
+    'FanFest — Zona Plaza de la Liberación',
+    'Zona principal del FanFest FIFA 2026 en el Centro Histórico de Guadalajara. Acceso peatonal libre. Aforo estimado: 40,000 personas/día.',
+    'Guadalajara'
+  ),
+
+  (
+    'a1000000-0000-0000-0000-000000000002',
+    'FanFest — Zona Rotonda de los Jaliscienses Ilustres',
+    'Zona secundaria del FanFest. Área cultural y de actividades comunitarias.',
+    'Guadalajara'
+  ),
+
+  (
+    'a1000000-0000-0000-0000-000000000003',
+    'FanFest — Zona Catedral',
+    'Zona norte del corredor FanFest. Alta densidad peatonal. Acceso desde Av. Hidalgo.',
+    'Guadalajara'
+  )
+
+ON CONFLICT (id) DO UPDATE SET
   name        = EXCLUDED.name,
-  description = EXCLUDED.description,
-  lat         = EXCLUDED.lat,
-  lng         = EXCLUDED.lng,
-  active      = EXCLUDED.active;
+  description = EXCLUDED.description;
 
 
 -- ============================================================
--- 2. NODOS (8 total)
--- Coordenadas GPS: a lo largo del Corredor Chapultepec real
--- pos_x / pos_y: posición % en overlay de imagen (0=izquierda/arriba, 100=derecha/abajo)
--- 🔧 UPDATE campos marcados después de tener datos reales
+-- 2. NODOS DE ALARMA
+-- Cada nodo corresponde a una fila del CSV "Nodos de Alarma"
+-- pos x/y = posición % en el overlay de imagen del mapa (0-100)
+-- lorawan_eui: 🔧 UPDATE con DevEUI real del Pico 2 / Heltec
 -- ============================================================
 
 INSERT INTO nodes (
-  id,
-  zone_id,
-  name,
-  type,
-  pos_x, pos_y,
-  lat, lng,
-  lorawan_eui,
-  status,
-  battery_pct,
-  last_seen_at
+  id, zone_id, name, type,
+  x, y,
+  lorawan_eui, status, last_seen_at
 ) VALUES
 
   -- ──────────────────────────────────────────────────────────
-  -- NODO 1: AVP3-ALFA (FÍSICO — conectado al Pico 2 + RFM95W)
-  -- 🔧 UPDATE: lorawan_eui con el DevEUI real del dispositivo en Loriot
+  -- ZONA 1 — Plaza de la Liberación
   -- ──────────────────────────────────────────────────────────
+
   (
     'b1000000-0000-0000-0000-000000000001',
     'a1000000-0000-0000-0000-000000000001',
-    'AVP3-Alfa-01 — Glorieta Chapultepec',
+    'AVP3-Alfa-01 — Centro Plaza Liberación',
     'avp_physical',
-    50.0, 50.0,
-    20.67320, -103.36850,     -- GPS: Glorieta Chapultepec (centro del corredor)
+    50.0, 50.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
     'DUMMY-EUI-0000000001',   -- 🔧 UPDATE con DevEUI real del Pico 2
     'online',
-    100,
     NOW()
   ),
 
-  -- ──────────────────────────────────────────────────────────
-  -- NODO 2: Tramo Norte — Av. Chapultepec / Libertad (simulado)
-  -- ──────────────────────────────────────────────────────────
   (
     'b1000000-0000-0000-0000-000000000002',
     'a1000000-0000-0000-0000-000000000001',
-    'Tramo Norte — Av. Libertad',
+    'AVP3-Sim-01 — Acceso Norte Plaza Liberación',
     'avp_simulated',
-    50.0, 10.0,
-    20.67580, -103.36750,
+    50.0, 10.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
     NULL,
     'online',
-    NULL,
     NULL
   ),
 
-  -- ──────────────────────────────────────────────────────────
-  -- NODO 3: Tramo Sur — Av. Chapultepec / Niños Héroes (simulado)
-  -- ──────────────────────────────────────────────────────────
   (
     'b1000000-0000-0000-0000-000000000003',
     'a1000000-0000-0000-0000-000000000001',
-    'Tramo Sur — Niños Héroes',
+    'AVP3-Sim-02 — Acceso Sur Plaza Liberación',
     'avp_simulated',
-    50.0, 90.0,
-    20.67050, -103.36950,
+    50.0, 90.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
     NULL,
     'online',
-    NULL,
     NULL
   ),
 
-  -- ──────────────────────────────────────────────────────────
-  -- NODO 4: Plaza de bolsillo — Lado Este (simulado)
-  -- ──────────────────────────────────────────────────────────
   (
     'b1000000-0000-0000-0000-000000000004',
     'a1000000-0000-0000-0000-000000000001',
-    'Plaza de Bolsillo Este',
-    'checkpoint',
-    85.0, 45.0,
-    20.67340, -103.36680,
+    'Punto Médico — Plaza Liberación Oriente',
+    'medical_point',
+    85.0, 50.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
     NULL,
     'online',
-    NULL,
     NULL
   ),
 
-  -- ──────────────────────────────────────────────────────────
-  -- NODO 5: Zona de Terrazas — Lado Oeste (simulado)
-  -- ──────────────────────────────────────────────────────────
   (
     'b1000000-0000-0000-0000-000000000005',
     'a1000000-0000-0000-0000-000000000001',
-    'Zona de Terrazas Oeste',
-    'checkpoint',
-    15.0, 55.0,
-    20.67300, -103.37020,
+    'Salida de Emergencia — Av. Hidalgo',
+    'mobile_unit',
+    20.0, 5.0,                -- 🔧 UPDATE con pos_x/pos_y del CSV
     NULL,
     'online',
-    NULL,
     NULL
   ),
 
   -- ──────────────────────────────────────────────────────────
-  -- NODO 6: Punto Médico — Cruz Verde cercana (simulado)
+  -- ZONA 2 — Rotonda Jaliscienses Ilustres
   -- ──────────────────────────────────────────────────────────
+
   (
     'b1000000-0000-0000-0000-000000000006',
-    'a1000000-0000-0000-0000-000000000001',
-    'Punto Médico — Cruz Verde',
-    'medical_point',
-    25.0, 30.0,
-    20.67450, -103.36980,
+    'a1000000-0000-0000-0000-000000000002',
+    'AVP3-Sim-03 — Rotonda Norte',
+    'avp_simulated',
+    50.0, 20.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
     NULL,
     'online',
-    NULL,
     NULL
   ),
 
-  -- ──────────────────────────────────────────────────────────
-  -- NODO 7: Acceso Principal — Cruce Chapultepec/Juárez (simulado)
-  -- ──────────────────────────────────────────────────────────
   (
     'b1000000-0000-0000-0000-000000000007',
-    'a1000000-0000-0000-0000-000000000001',
-    'Acceso Principal — Cruce Juárez',
-    'exit',
-    50.0, 2.0,
-    20.67620, -103.36720,
+    'a1000000-0000-0000-0000-000000000002',
+    'Punto Médico — Rotonda Sur',
+    'medical_point',
+    50.0, 80.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
     NULL,
     'online',
-    NULL,
     NULL
   ),
 
   -- ──────────────────────────────────────────────────────────
-  -- NODO 8: Salida de Emergencia — Lateral Poniente (simulado)
+  -- ZONA 3 — Zona Catedral
   -- ──────────────────────────────────────────────────────────
+
   (
     'b1000000-0000-0000-0000-000000000008',
-    'a1000000-0000-0000-0000-000000000001',
-    'Salida de Emergencia — Lateral Poniente',
-    'emergency_exit',
-    10.0, 80.0,
-    20.67120, -103.37080,
+    'a1000000-0000-0000-0000-000000000003',
+    'AVP3-Sim-04 — Atrio Catedral',
+    'avp_simulated',
+    50.0, 50.0,               -- 🔧 UPDATE con pos_x/pos_y del CSV
     NULL,
     'online',
-    NULL,
     NULL
   )
 
 ON CONFLICT (id) DO UPDATE SET
-  name         = EXCLUDED.name,
-  type         = EXCLUDED.type,
-  pos_x        = EXCLUDED.pos_x,
-  pos_y        = EXCLUDED.pos_y,
-  lat          = EXCLUDED.lat,
-  lng          = EXCLUDED.lng,
-  lorawan_eui  = EXCLUDED.lorawan_eui,
-  status       = EXCLUDED.status;
-
-
--- ============================================================
--- 3. USUARIOS BASE (coordinadores + aliado demo)
--- ============================================================
-
-INSERT INTO users (id, nickname, role, zone_id, language, password_hash)
-VALUES
-  ('c1000000-0000-0000-0000-000000000001', 'coord_zapopan_01', 'coordinator', 'a1000000-0000-0000-0000-000000000001', 'es', 'DUMMY_HASH_01'),
-  ('c1000000-0000-0000-0000-000000000002', 'coord_chapultepec_02', 'coordinator', 'a1000000-0000-0000-0000-000000000001', 'es', 'DUMMY_HASH_02'),
-  ('c1000000-0000-0000-0000-000000000003', 'aliado_demo_01', 'ally', 'a1000000-0000-0000-0000-000000000001', 'es', NULL)
-ON CONFLICT (id) DO UPDATE SET
-  nickname      = EXCLUDED.nickname,
-  role          = EXCLUDED.role,
-  password_hash = EXCLUDED.password_hash;
-
-
--- ============================================================
--- 4. COMUNIDAD BASE
--- ============================================================
-
-INSERT INTO communities (id, zone_id, name, description, status)
-VALUES (
-  'd1000000-0000-0000-0000-000000000001',
-  'a1000000-0000-0000-0000-000000000001',
-  'Vecinos Chapultepec',
-  'Comunidad de vecinos, comerciantes y visitantes frecuentes del Corredor Chapultepec. Monitoreo colaborativo 24/7.',
-  'active'
-)
-ON CONFLICT (id) DO UPDATE SET
   name        = EXCLUDED.name,
-  description = EXCLUDED.description,
+  type        = EXCLUDED.type,
+  x           = EXCLUDED.x,
+  y           = EXCLUDED.y,
+  lorawan_eui = EXCLUDED.lorawan_eui,
   status      = EXCLUDED.status;
 
-INSERT INTO community_members (id, community_id, user_id, role)
-VALUES
-  ('e1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001', 'admin'),
-  ('e1000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000002', 'admin'),
-  ('e1000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000003', 'ally')
-ON CONFLICT (community_id, user_id) DO UPDATE SET
-  role = EXCLUDED.role;
+
+-- ============================================================
+-- 3. COORDINADORES BASE
+-- ⚠️  Estos registros deben existir primero en auth.users de
+--     Supabase (crear manualmente en Dashboard > Auth > Users)
+--     antes de insertar aquí. El ID debe coincidir con auth.users.
+-- ============================================================
+
+INSERT INTO users_coord (id, email, role) VALUES
+  ('c1000000-0000-0000-0000-000000000001', 'erick@zonaseguraa.com', 'coordinator'),
+  ('c1000000-0000-0000-0000-000000000002', 'coordinator@zonaseguraa.com', 'coordinator'),
+  ('c1000000-0000-0000-0000-000000000003', 'admin@zonaseguraa.com',  'admin')
+ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  role  = EXCLUDED.role;
 
 
 -- ============================================================
--- 5. VERIFICACIÓN INMEDIATA
+-- 4. VERIFICACIÓN FINAL
 -- ============================================================
+
 SELECT
-  n.name                        AS nodo,
-  n.type                        AS tipo,
-  n.status                      AS estado,
-  COALESCE(n.lorawan_eui, '— simulado —') AS eui,
-  ROUND(n.pos_x::numeric, 1)    AS "pos_x%",
-  ROUND(n.pos_y::numeric, 1)    AS "pos_y%",
-  n.lat,
-  n.lng
+  z.name                                    AS zona,
+  n.name                                    AS nodo,
+  n.type                                    AS tipo,
+  n.status                                  AS estado,
+  COALESCE(n.lorawan_eui, '— simulado —')  AS eui,
+  n.x                                       AS "pos_x%",
+  n.y                                       AS "pos_y%"
 FROM nodes n
 JOIN zones z ON z.id = n.zone_id
-WHERE z.slug = 'chapultepec'
-ORDER BY n.type DESC, n.name;
+ORDER BY z.name, n.type DESC, n.name;
