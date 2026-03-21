@@ -296,13 +296,28 @@ export default function CoordinatorPage() {
             {votes.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-3">
                 {votes.slice(0, 10).map((v, i) => (
-                  <div key={v.id || i} className="w-8 h-8 rounded-full bg-teal-500 text-white flex items-center justify-center text-xs font-bold">
+                  <div key={v.id || i} className="w-8 h-8 rounded-full bg-teal-500 text-white flex items-center justify-center text-xs font-bold" title={v.nickname || '?'}>
                     {(v.nickname || '?')[0].toUpperCase()}
                   </div>
                 ))}
                 {votes.length > 10 && <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-bold">+{votes.length - 10}</div>}
               </div>
             )}
+            {votes.filter(v => v.comment).length > 0 && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs uppercase font-semibold text-gray-400 tracking-wider">Comentarios</p>
+                {votes.filter(v => v.comment).slice(0, 5).map((v, i) => (
+                  <div key={v.id || i} className="border-l-2 border-teal-300 pl-3 py-1">
+                    <p className="text-sm text-gray-700">{v.comment}</p>
+                    <p className="text-xs text-gray-400">{v.nickname}{v.role === 'coordinator' ? ' (Coord.)' : ''} · {getTimeAgo(v.created_at)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Link href={`/alert/${a.id}`} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center justify-center gap-2 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors">
+              👁️ Ver vista pública y validaciones
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+            </Link>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
