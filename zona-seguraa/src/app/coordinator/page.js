@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -138,7 +138,7 @@ export default function CoordinatorPage() {
     }
   }, [])
 
-  const handleAction = async (alertId, newStatus) => {
+  const handleAction = useCallback(async (alertId, newStatus) => {
     setActionLoading(alertId)
     try {
       const headers = { 'Content-Type': 'application/json' }
@@ -148,13 +148,16 @@ export default function CoordinatorPage() {
         headers,
         body: JSON.stringify({ status: newStatus }),
       })
-      if (res.ok) await fetchData()
+      if (res.ok) {
+        setSelectedAlert((prev) => prev && prev.id === alertId ? { ...prev, status: newStatus, ...(newStatus === 'resolved' ? { resolved_at: new Date().toISOString() } : {}) } : prev)
+        await fetchData()
+      }
     } catch (err) {
       console.error('[coordinator] action error:', err)
     } finally {
       setActionLoading(null)
     }
-  }
+  }, [session])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -164,16 +167,42 @@ export default function CoordinatorPage() {
 
   const handleRefresh = () => { setRefreshing(true); fetchData() }
 
-  const startResolveHold = (alertId) => {
+  const handleActionRef = useRef(handleAction)
+  useEffect(() => { handleActionRef.current = handleAction }, [handleAction])
+  useEffect(() => {
+    return () => {
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
+    }
+  }, [])
+
+  const [resolveProgress, setResolveProgress] = useState(0)
+  const progressIntervalRef = useRef(null)
+
+  const startResolveHold = (alertId, e) => {
+    if (e) e.preventDefault()
+    if (resolveHolding) return
     setResolveHolding(alertId)
-    holdTimerRef.current = setTimeout(() => {
-      handleAction(alertId, 'resolved')
+    setResolveProgress(0)
+    const startTime = Date.now()
+    progressIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      setResolveProgress(Math.min(100, (elapsed / 3000) * 100))
+    }, 50)
+    holdTimerRef.current = setTimeout(async () => {
+      clearInterval(progressIntervalRef.current)
+      setResolveProgress(100)
+      await handleActionRef.current(alertId, 'resolved')
       setResolveHolding(null)
+      setResolveProgress(0)
     }, 3000)
   }
-  const cancelResolveHold = () => {
+  const cancelResolveHold = (e) => {
+    if (e) e.preventDefault()
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
     setResolveHolding(null)
+    setResolveProgress(0)
   }
 
   const activeAlerts = useMemo(() => alerts.filter((a) => a.status === 'active'), [alerts])
@@ -350,21 +379,26 @@ export default function CoordinatorPage() {
               </button>
             )}
             {a.status === 'in_progress' && (
-              <button
-                onMouseDown={() => startResolveHold(a.id)}
-                onMouseUp={cancelResolveHold}
-                onMouseLeave={cancelResolveHold}
-                onTouchStart={() => startResolveHold(a.id)}
-                onTouchEnd={cancelResolveHold}
-                disabled={actionLoading === a.id}
-                className={`w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${resolveHolding === a.id ? 'bg-green-700 text-white scale-95' : 'bg-green-500 text-white hover:bg-green-600'}`}
-              >
-                🏁 Alerta Resuelta
-                <span className="text-sm font-normal opacity-80">Mantener presionado 3 seg.</span>
-              </button>
-            )}
-            {a.status === 'in_progress' && (
-              <p className="text-xs text-center text-gray-400">Esta acción es irreversible. Mantén presionado para confirmar.</p>
+              <div className="space-y-2">
+                <button
+                  onMouseDown={(e) => startResolveHold(a.id, e)}
+                  onMouseUp={cancelResolveHold}
+                  onMouseLeave={cancelResolveHold}
+                  onTouchStart={(e) => startResolveHold(a.id, e)}
+                  onTouchEnd={cancelResolveHold}
+                  onContextMenu={(e) => e.preventDefault()}
+                  disabled={actionLoading === a.id}
+                  className={`relative w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 overflow-hidden select-none ${resolveHolding === a.id ? 'bg-green-700 text-white scale-[0.98]' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                >
+                  {resolveHolding === a.id && (
+                    <div className="absolute inset-0 bg-green-900/30 transition-all" style={{ width: `${resolveProgress}%` }} />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    🏁 {resolveHolding === a.id ? `${Math.ceil((100 - resolveProgress) / 100 * 3)}s...` : 'Alerta Resuelta'}
+                  </span>
+                </button>
+                <p className="text-xs text-center text-gray-400">Mantén presionado 3 segundos para confirmar.</p>
+              </div>
             )}
             {(a.status === 'resolved' || a.status === 'false_alarm') && (
               <p className="text-sm text-center text-gray-500 py-2">Esta alerta ya fue {a.status === 'resolved' ? 'resuelta' : 'cancelada'}.</p>
