@@ -191,6 +191,20 @@ export default function CoordinatorDashboard() {
                     {/* Alert Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          {/* Link to detail */}
+                          <a
+                            href={`/alert/${alert.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+                          >
+                            Ver detalle completo
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        </div>
                         <div className="flex items-center gap-3 mb-2">
                           {/* Type Badge */}
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
