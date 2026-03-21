@@ -4,19 +4,39 @@ import { createServerClient } from '@/lib/supabase-server';
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const zone_id = searchParams.get('zone_id');
-
-  if (!zone_id) {
-    return NextResponse.json({ error: 'zone_id is required' }, { status: 400 });
-  }
+  const status = searchParams.get('status');
+  const sort = searchParams.get('sort');
 
   const supabase = createServerClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('alerts')
-    .select('*, node:nodes(name, type)')
-    .eq('zone_id', zone_id)
-    .neq('status', 'resolved')
-    .order('created_at', { ascending: false });
+    .select('*, node:nodes(name, type, lat, lng)');
+
+  // Filter by zone_id if provided
+  if (zone_id) {
+    query = query.eq('zone_id', zone_id);
+  }
+
+  // Filter by status if provided (can be comma-separated)
+  if (status) {
+    const statuses = status.split(',').map(s => s.trim());
+    if (statuses.length === 1) {
+      query = query.eq('status', statuses[0]);
+    } else {
+      query = query.in('status', statuses);
+    }
+  }
+
+  // Apply sorting
+  if (sort) {
+    const [field, order] = sort.split(':');
+    query = query.order(field, { ascending: order === 'asc' });
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
