@@ -11,7 +11,8 @@ const ZOOM = 16;
 
 const MapContainer = dynamic(() => import('react-leaflet').then((m) => m.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), { ssr: false });
+const Circle = dynamic(() => import('react-leaflet').then((m) => m.Circle), { ssr: false });
+const CircleMarker = dynamic(() => import('react-leaflet').then((m) => m.CircleMarker), { ssr: false });
 const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), { ssr: false });
 
 const typeLabels = {
@@ -28,6 +29,12 @@ const nodeTypeLabels = {
   avp_simulated: 'AVP Simulado',
   medical_point: 'Punto Médico',
   mobile_unit: 'Unidad Móvil',
+};
+const nodeTypeColors = {
+  avp_physical: '#ef4444',
+  avp_simulated: '#3b82f6',
+  medical_point: '#10b981',
+  mobile_unit: '#f59e0b',
 };
 
 export default function ZonePage() {
@@ -124,7 +131,7 @@ export default function ZonePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mb-4" style={{ height: 384 }}>
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mb-4" style={{ height: 550 }}>
           {loading || !mapReady ? (
             <div className="flex items-center justify-center h-full bg-gray-100">
               <span className="text-gray-500">Cargando mapa...</span>
@@ -135,16 +142,69 @@ export default function ZonePage() {
                 attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              {nodes.filter((n) => n.lat && n.lng).map((node) => (
-                <Marker key={node.id} position={[node.lat, node.lng]}>
+              {/* Círculos de cobertura de 150m por nodo */}
+              {nodes.filter((n) => n.lat && n.lng).map((node) => {
+                const nodeColor = nodeTypeColors[node.type] || '#6b7280';
+                const hasAlert = alerts.some((a) => a.node_id === node.id && (a.status === 'active' || a.status === 'in_progress'));
+                const circleColor = hasAlert ? '#ef4444' : nodeColor;
+                const fillOpacity = hasAlert ? 0.3 : 0.15;
+                
+                return (
+                  <Circle
+                    key={`circle-${node.id}`}
+                    center={[node.lat, node.lng]}
+                    radius={150}
+                    pathOptions={{
+                      color: circleColor,
+                      fillColor: circleColor,
+                      fillOpacity: fillOpacity,
+                      weight: hasAlert ? 3 : 2
+                    }}
+                  >
+                    <Popup>
+                      <strong>{node.name}</strong>
+                      <br />
+                      {nodeTypeLabels[node.type] || node.type}
+                      <br />
+                      Estado: {node.status === 'online' ? '🟢 Online' : node.status === 'alert' ? '🔴 Alerta' : '⚫ Offline'}
+                      {hasAlert && (
+                        <>
+                          <br />
+                          <strong className="text-red-600">⚠️ Con alerta activa</strong>
+                        </>
+                      )}
+                    </Popup>
+                  </Circle>
+                );
+              })}
+              
+              {/* Marcadores rojos para alertas activas */}
+              {alerts.filter((a) => a.node?.lat && a.node?.lng && (a.status === 'active' || a.status === 'in_progress')).map((alert) => (
+                <CircleMarker
+                  key={`alert-${alert.id}`}
+                  center={[alert.node.lat, alert.node.lng]}
+                  radius={12}
+                  pathOptions={{
+                    color: '#dc2626',
+                    fillColor: '#ef4444',
+                    fillOpacity: 0.6,
+                    weight: 3
+                  }}
+                >
                   <Popup>
-                    <strong>{node.name}</strong>
+                    <strong style={{ color: '#dc2626' }}>🚨 {typeLabels[alert.type] || alert.type}</strong>
                     <br />
-                    {nodeTypeLabels[node.type] || node.type}
+                    {alert.description && (
+                      <>
+                        {alert.description}
+                        <br />
+                      </>
+                    )}
+                    Nivel: <strong>{levelLabels[alert.level] || alert.level}</strong>
                     <br />
-                    Estado: {node.status === 'online' ? '🟢 Online' : node.status === 'alert' ? '🔴 Alerta' : '⚫ Offline'}
+                    Estado: {alert.status === 'in_progress' ? 'Ayuda en Camino' : 'Activa'}
                   </Popup>
-                </Marker>
+                </CircleMarker>
               ))}
             </MapContainer>
           )}
