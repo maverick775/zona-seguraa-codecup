@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase-server';
+import { IS_DEMO_MODE } from '@/lib/signalarm/config';
+import { getRepository } from '@/lib/signalarm/repository';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -7,6 +9,10 @@ export async function GET(request) {
 
   if (!zone_id) {
     return NextResponse.json({ error: 'zone_id is required' }, { status: 400 });
+  }
+
+  if (IS_DEMO_MODE) {
+    return NextResponse.json(await getRepository().listNodes(zone_id));
   }
 
   const supabase = createServerClient();

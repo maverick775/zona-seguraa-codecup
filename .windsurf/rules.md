@@ -46,10 +46,15 @@ Zona SeguRAA es un MVP de seguridad comunitaria para el **FanFest FIFA World Cup
 - Variables de entorno `LORIOT_*`
 - Scripts de simulación automática (`demo-mode.js`)
 
-### Auth de coordinadores (SIMPLIFICADO para demo)
-- El dashboard `/coordinator/dashboard` debe ser **accesible sin login**
-- Eliminar o comentar cualquier middleware de protección en rutas `/coordinator/*`
-- No agregar nueva auth hasta después del CodeCup
+### Auth (ACTUALIZADO 2026-11-03 · Signalarm, ronda express N0)
+- **Ya no aplica** "dashboard sin login" ni "quitar middleware". La coordinación exige sesión.
+- La autorización real está en cada API route (`src/lib/signalarm/actor.js`): identidad desde la
+  sesión, rol coordinador desde `users_coord` y zonas desde `coordinator_zones`. Otra zona → 404.
+- Reporte ciudadano N0: `POST /api/reports`. Transiciones: `POST /api/coordinator/alerts/:id/transitions`.
+  El `PATCH /api/alerts/:id` ya no cambia estados.
+- Modo demo explícito: `NEXT_PUBLIC_SIGNALARM_DATA_MODE=demo` + `SIGNALARM_DEMO_SECRET`. Datos en memoria;
+  nunca se usa como respaldo silencioso de un fallo.
+- JavaScript en esta ronda; TypeScript gradual se evalúa después (ver avp3/08-sprints-prototipo-criterios.md).
 
 ---
 
@@ -129,7 +134,7 @@ useEffect(() => {
 
 ## Prioridad de Tareas (orden estricto)
 
-1. **P0** — Reparar `/coordinator/dashboard` (404) — SIN auth
+1. **P0** — (Hecho) `/coordinator/dashboard` redirige a la bandeja; requiere sesión
 2. **P0** — `POST /api/votes` recalcula y actualiza `alerts.level`
 3. **P0** — Crear `/alert/[id]/page.js` con votos/comentarios
 4. **P1** — Crear `/join/page.js` + `POST /api/users/temp`
@@ -145,7 +150,7 @@ useEffect(() => {
 - No usar `createBrowserClient` en API routes
 - No usar `node.x` / `node.y` para posición (usar `node.lat` / `node.lng`)
 - No importar Leaflet en server components
-- No bloquear dashboard con auth
+- No quitar la autenticación de coordinación ni de los reportes
 - No depender de `LORIOT_*` en el flujo principal
 - No olvidar `.select()` después de `.insert()` cuando se necesita el objeto creado
 

@@ -1,158 +1,27 @@
-import { NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase-server'
+import { requireActor } from '@/lib/signalarm/actor'
+import { validateVote } from '@/lib/signalarm/domain'
+import { fail, handle, ok, readJson } from '@/lib/signalarm/http'
+import { getRepository } from '@/lib/signalarm/repository'
 
-export async function POST(request) {
-  const supabase = createServerClient()
+// POST /api/votes — validación comunitaria.
+// Antes (hallazgo H3) aceptaba `nickname` y `role` del cuerpo: cualquiera votaba
+// con peso 2 y tres llamadas subían una alerta a nivel 3.
+// Ahora: requiere sesión; identidad, rol y peso salen del servidor
+// (peso 2 solo para coordinación de la zona de la alerta); un voto por usuario;
+// y los votos NO cambian el nivel (escalamiento automático desactivado, S3-6).
+export const POST = handle('votes.POST', async (request, _ctx, requestId) => {
+  const actor = await requireActor(request)
+  const body = await readJson(request)
+  const { value, errors } = validateVote(body)
+  if (errors) return fail(400, 'validation-error', 'Revisa los datos de la validación', { requestId, details: errors })
 
-  let body
-  try {
-    body = await request.json()
-  } catch {
-    return NextResponse.json({ error: 'Body JSON inválido' }, { status: 400 })
-  }
-
-  const { alert_id, nickname, role, comment } = body
-
-  // Validaciones de campos requeridos
-  if (!alert_id || !nickname || !role) {
-    return NextResponse.json(
-      { error: 'Campos requeridos: alert_id, nickname, role' },
-      { status: 400 }
-    )
-  }
-
-  if (!['visitor', 'coordinator'].includes(role)) {
-    return NextResponse.json(
-      { error: 'Role debe ser visitor o coordinator' },
-      { status: 400 }
-    )
-  }
-
-  // Verificar que la alerta existe y está activa
-  const { data: alert, error: alertCheckError } = await supabase
-    .from('alerts')
-    .select('id, level, status')
-    .eq('id', alert_id)
-    .single()
-
-  if (alertCheckError || !alert) {
-    return NextResponse.json({ error: 'Alerta no encontrada' }, { status: 404 })
-  }
-
-  if (alert.status === 'resolved' || alert.status === 'false_alarm') {
-    return NextResponse.json(
-      { error: 'No se puede votar en una alerta cerrada' },
-      { status: 400 }
-    )
-  }
-
-  // Verificar que el nickname existe en users_temp (solo para visitors)
-  if (role === 'visitor') {
-    const { data: userTemp, error: userCheckError } = await supabase
-      .from('users_temp')
-      .select('id, nickname')
-      .eq('nickname', nickname)
-      .single()
-
-    if (userCheckError || !userTemp) {
-      return NextResponse.json(
-        { error: 'Usuario no registrado. Debes crear un alias primero.' },
-        { status: 403 }
-      )
-    }
-  }
-
-  // Verificar si el usuario ya votó
-  const { data: existingVote } = await supabase
-    .from('alert_votes')
-    .select('id')
-    .eq('alert_id', alert_id)
-    .eq('nickname', nickname)
-    .single()
-
-  if (existingVote) {
-    return NextResponse.json(
-      { error: 'Ya has votado en esta alerta' },
-      { status: 409 }
-    )
-  }
-
-  // Calcular peso según el rol
-  const weight = role === 'coordinator' ? 2 : 1
-
-  // Insertar el voto
-  const voteData = {
-    alert_id,
-    nickname,
-    role,
-    weight,
-    comment: comment || null,
-    created_at: new Date().toISOString()
-  }
-
-  const { data: insertedVote, error: insertError } = await supabase
-    .from('alert_votes')
-    .insert(voteData)
-    .select()
-    .single()
-
-  if (insertError) {
-    return NextResponse.json(
-      { error: insertError.message },
-      { status: 500 }
-    )
-  }
-
-  // Recalcular peso total
-  const { data: allVotes, error: votesError } = await supabase
-    .from('alert_votes')
-    .select('weight')
-    .eq('alert_id', alert_id)
-
-  if (votesError) {
-    return NextResponse.json(
-      { error: 'Error al calcular peso total' },
-      { status: 500 }
-    )
-  }
-
-  const totalWeight = allVotes.reduce((sum, v) => sum + (v.weight || 0), 0)
-
-  // Aplicar lógica de escalado
-  let newLevel = alert.level
-
-  if (totalWeight >= 6 && alert.level < 3) {
-    newLevel = 3
-  } else if (totalWeight >= 3 && alert.level < 2) {
-    newLevel = 2
-  }
-
-  // Actualizar nivel si cambió
-  if (newLevel !== alert.level) {
-    const { error: updateError } = await supabase
-      .from('alerts')
-      .update({
-        level: newLevel,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', alert_id)
-
-    if (updateError) {
-      console.error('Error al actualizar nivel de alerta:', updateError)
-    }
-  }
-
-  // Obtener el nivel actualizado para confirmar
-  const { data: updatedAlert } = await supabase
-    .from('alerts')
-    .select('level')
-    .eq('id', alert_id)
-    .single()
-
-  return NextResponse.json({
-    vote: insertedVote,
-    totalWeight,
-    alertLevel: updatedAlert?.level || alert.level,
-    escalated: newLevel > alert.level
-  }, { status: 201 })
-}
+  const repo = getRepository()
+  const vote = await repo.addVote({ actor, value })
+  const votes = await repo.listVotes(value.alert_id)
+  const totalWeight = votes.reduce((s, v) => s + (v.weight || 0), 0)
+  console.info('[votes.POST] persisted', { requestId, alert_id: value.alert_id, role: vote.role })
+  return ok(
+    { vote: { id: vote.id, role: vote.role, weight: vote.weight, created_at: vote.created_at }, total_weight: totalWeight, escalated: false },
+    { status: 201, requestId }
+  )
+})

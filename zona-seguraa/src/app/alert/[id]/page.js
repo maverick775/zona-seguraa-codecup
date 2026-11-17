@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createRealtimeClient } from '@/lib/supabase'
 
 export default function AlertDetailPage() {
   const router = useRouter()
@@ -120,21 +120,24 @@ export default function AlertDetailPage() {
     setVoteError('')
 
     try {
+      // La identidad y el peso los decide el servidor con la sesión (H3).
       const response = await fetch('/api/votes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           alert_id: alertId,
-          nickname: user.nickname,
-          role: 'visitor',
           comment: voteComment.trim() || null
         })
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
 
       if (!response.ok) {
-        setVoteError(data.error || 'Error al enviar validación')
+        setVoteError(
+          response.status === 401
+            ? 'Inicia sesión para validar esta alerta.'
+            : data?.error?.message || 'Error al enviar validación'
+        )
         setVoting(false)
         return
       }
@@ -211,7 +214,8 @@ export default function AlertDetailPage() {
   useEffect(() => {
     if (!alertId) return
 
-    const supabase = createClient()
+    const supabase = createRealtimeClient()
+    if (!supabase) return
 
     const channel = supabase
       .channel(`alert-${alertId}`)

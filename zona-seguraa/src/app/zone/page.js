@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { createClient } from '@/lib/supabase';
+import { createRealtimeClient } from '@/lib/supabase';
+import { DEMO_SCENARIO } from '@/lib/signalarm/config';
 
-const ZONE_ID = 'a1000000-0000-0000-0000-000000000001';
+const ZONE_ID = DEMO_SCENARIO.defaultZoneId;
 const CENTER = [20.6736, -103.3478];
 const ZOOM = 16;
 
@@ -70,7 +71,8 @@ export default function ZonePage() {
 
   useEffect(() => {
     fetchData();
-    const supabase = createClient();
+    const supabase = createRealtimeClient();
+    if (!supabase) return;
     const channel = supabase
       .channel('zone-alerts')
       .on(

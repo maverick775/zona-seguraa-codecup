@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { createClient } from '@/lib/supabase'
+import { createClient, createRealtimeClient } from '@/lib/supabase'
+import { DEMO_SCENARIO } from '@/lib/signalarm/config'
+import { signOut } from '@/components/SiteHeader'
 
-const ZONE_ID = 'a1000000-0000-0000-0000-000000000001'
+const ZONE_ID = DEMO_SCENARIO.defaultZoneId
 const CENTER = [20.6770, -103.3458]
 const ZOOM = 17
 
@@ -65,12 +67,9 @@ export default function CoordinatorPage() {
   const [alertFilter, setAlertFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedAlert, setSelectedAlert] = useState(null)
-  const [actionLoading, setActionLoading] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const iconFixRef = useRef(false)
-  const [resolveHolding, setResolveHolding] = useState(null)
-  const holdTimerRef = useRef(null)
 
   useEffect(() => {
     const init = async () => {
@@ -121,7 +120,8 @@ export default function CoordinatorPage() {
   useEffect(() => {
     fetchData()
     try {
-      const supabase = createClient()
+      const supabase = createRealtimeClient()
+      if (!supabase) return
       const channel = supabase
         .channel('coord-dash')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'alerts', filter: `zone_id=eq.${ZONE_ID}` }, () => fetchData())
@@ -134,72 +134,12 @@ export default function CoordinatorPage() {
     }
   }, [])
 
-  const handleAction = useCallback(async (alertId, newStatus) => {
-    setActionLoading(alertId)
-    try {
-      const headers = { 'Content-Type': 'application/json' }
-      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`
-      const res = await fetch(`/api/alerts/${alertId}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ status: newStatus }),
-      })
-      if (res.ok) {
-        setSelectedAlert((prev) => prev && prev.id === alertId ? { ...prev, status: newStatus, ...(newStatus === 'resolved' ? { resolved_at: new Date().toISOString() } : {}) } : prev)
-        await fetchData()
-      }
-    } catch (err) {
-      console.error('[coordinator] action error:', err)
-    } finally {
-      setActionLoading(null)
-    }
-  }, [session])
-
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.replace('/coordinator/login')
+    await signOut()
+    router.replace('/login?next=/coordinator')
   }
 
   const handleRefresh = () => { setRefreshing(true); fetchData() }
-
-  const handleActionRef = useRef(handleAction)
-  useEffect(() => { handleActionRef.current = handleAction }, [handleAction])
-  useEffect(() => {
-    return () => {
-      if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
-    }
-  }, [])
-
-  const [resolveProgress, setResolveProgress] = useState(0)
-  const progressIntervalRef = useRef(null)
-
-  const startResolveHold = (alertId, e) => {
-    if (e) e.preventDefault()
-    if (resolveHolding) return
-    setResolveHolding(alertId)
-    setResolveProgress(0)
-    const startTime = Date.now()
-    progressIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime
-      setResolveProgress(Math.min(100, (elapsed / 3000) * 100))
-    }, 50)
-    holdTimerRef.current = setTimeout(async () => {
-      clearInterval(progressIntervalRef.current)
-      setResolveProgress(100)
-      await handleActionRef.current(alertId, 'resolved')
-      setResolveHolding(null)
-      setResolveProgress(0)
-    }, 3000)
-  }
-  const cancelResolveHold = (e) => {
-    if (e) e.preventDefault()
-    if (holdTimerRef.current) clearTimeout(holdTimerRef.current)
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
-    setResolveHolding(null)
-    setResolveProgress(0)
-  }
 
   const activeAlerts = useMemo(() => alerts.filter((a) => a.status === 'active'), [alerts])
   const inProgressAlerts = useMemo(() => alerts.filter((a) => a.status === 'in_progress'), [alerts])
@@ -347,58 +287,12 @@ export default function CoordinatorPage() {
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
             <p className="text-xs uppercase font-semibold text-gray-600 tracking-wider flex items-center gap-1">⚙️ Acciones del Coordinador</p>
-            {a.status === 'active' && (
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => { handleAction(a.id, 'in_progress'); setSelectedAlert({ ...a, status: 'in_progress' }) }}
-                  disabled={actionLoading === a.id}
-                  className="py-3 px-4 bg-green-50 border-2 border-green-500 text-green-700 rounded-xl font-medium hover:bg-green-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <span>✓</span> Verificar
-                </button>
-                <button
-                  onClick={() => { handleAction(a.id, 'false_alarm'); setSelectedAlert({ ...a, status: 'false_alarm' }) }}
-                  disabled={actionLoading === a.id}
-                  className="py-3 px-4 bg-red-50 border-2 border-red-400 text-red-600 rounded-xl font-medium hover:bg-red-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <span>✕</span> Falsa Alarma
-                </button>
-              </div>
-            )}
-            {a.status === 'active' && (
-              <button
-                onClick={() => { handleAction(a.id, 'in_progress'); setSelectedAlert({ ...a, status: 'in_progress' }) }}
-                disabled={actionLoading === a.id}
-                className="w-full py-4 bg-teal-600 text-white rounded-xl font-bold text-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                🚑 Ayuda en Camino
-              </button>
-            )}
-            {a.status === 'in_progress' && (
-              <div className="space-y-2">
-                <button
-                  onMouseDown={(e) => startResolveHold(a.id, e)}
-                  onMouseUp={cancelResolveHold}
-                  onMouseLeave={cancelResolveHold}
-                  onTouchStart={(e) => startResolveHold(a.id, e)}
-                  onTouchEnd={cancelResolveHold}
-                  onContextMenu={(e) => e.preventDefault()}
-                  disabled={actionLoading === a.id}
-                  className={`relative w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 overflow-hidden select-none ${resolveHolding === a.id ? 'bg-green-700 text-white scale-[0.98]' : 'bg-green-500 text-white hover:bg-green-600'}`}
-                >
-                  {resolveHolding === a.id && (
-                    <div className="absolute inset-0 bg-green-900/30 transition-all" style={{ width: `${resolveProgress}%` }} />
-                  )}
-                  <span className="relative z-10 flex items-center gap-2">
-                    🏁 {resolveHolding === a.id ? `${Math.ceil((100 - resolveProgress) / 100 * 3)}s...` : 'Alerta Resuelta'}
-                  </span>
-                </button>
-                <p className="text-xs text-center text-gray-400">Mantén presionado 3 segundos para confirmar.</p>
-              </div>
-            )}
-            {(a.status === 'resolved' || a.status === 'false_alarm') && (
-              <p className="text-sm text-center text-gray-500 py-2">Esta alerta ya fue {a.status === 'resolved' ? 'resuelta' : 'cancelada'}.</p>
-            )}
+            {/* Las acciones se movieron a la bandeja: exigen sesión de coordinación,
+                piden resolución o motivo y dejan historial. El PATCH directo ya no
+                cambia estados. */}
+            <Link href={`/coordinator/reports/${a.id}`} className="block w-full py-3 bg-slate-900 text-white rounded-xl font-semibold text-center hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900">
+              Gestionar en la bandeja de coordinación
+            </Link>
           </div>
         </div>
       </div>
@@ -416,7 +310,7 @@ export default function CoordinatorPage() {
               <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center"><span className="text-lg">🛡️</span></div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-lg">ZonaSeguRAA</span>
+                  <span className="font-bold text-lg">Signalarm</span>
                   <span className="px-2 py-0.5 bg-yellow-500 text-yellow-900 text-[10px] font-bold rounded-full uppercase">Coord.</span>
                 </div>
                 <p className="text-xs text-teal-100">Plaza de la Liberación</p>
@@ -771,7 +665,7 @@ export default function CoordinatorPage() {
                 Cerrar Sesión
               </button>
             ) : (
-              <Link href="/coordinator/login" className="block w-full py-3 px-4 bg-teal-600 text-white rounded-xl font-medium text-center hover:bg-teal-700 transition-colors">
+              <Link href="/login?next=/coordinator" className="block w-full py-3 px-4 bg-teal-600 text-white rounded-xl font-medium text-center hover:bg-teal-700 transition-colors">
                 Iniciar Sesión como Coordinador
               </Link>
             )}

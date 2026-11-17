@@ -1,0 +1,22 @@
+{
+  "spec_version": "1.0",
+  "contract": "signalarm.events",
+  "contract_version": "1.0.0",
+  "id": "36567af4-eb5c-54f1-8c24-7f14797d0788",
+  "type": "report.taken",
+  "source": "signalarm-core",
+  "occurred_at": "2026-11-03T18:17:00.000Z",
+  "subject": {
+    "kind": "report",
+    "id": "e3a0c0de-0000-4000-8000-000000000003"
+  },
+  "sequence": 2,
+  "zone_id": "a1000000-0000-0000-0000-000000000001",
+  "data": {
+    "level": 3,
+    "report_type": "fire",
+    "status_from": "active",
+    "status_to": "in_progress",
+    "actor_role": "coordinator"
+  }
+}

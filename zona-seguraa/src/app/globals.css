@@ -17,6 +17,21 @@
   --alert-critical: #e63946;
 }
 
+/* Signalarm (U1): tokens inspirados en el Figma de Zona SeguRAA. */
+:root {
+  --sg-primary: #2b7a78;      /* contraste 5.1:1 sobre blanco */
+  --sg-surface: #ffffff;
+  --sg-canvas: #f3f4f6;
+}
+.sg-type-medical { background: #fde8ea; }
+.sg-type-security { background: #e8eefc; }
+.sg-type-fire { background: #fdecdf; }
+.sg-type-evacuation { background: #e6f4ef; }
+.sg-status-dot-active { background: #b91c1c; }
+.sg-status-dot-in_progress { background: #1d4ed8; }
+.sg-status-dot-resolved { background: #15803d; }
+.sg-status-dot-false_alarm { background: #6b7280; }
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

@@ -42,7 +42,7 @@ app/
       page.js                     ← Detalle: votos, comentarios, estado ← CREAR
   coordinator/
     dashboard/
-      page.js                     ← Dashboard principal SIN auth ← REPARAR (404)
+      page.js                     ← Redirige a /coordinator/reports (requiere sesión)
     alert/
       [id]/
         page.js                   ← Gestión de alerta por coordinador
@@ -303,7 +303,7 @@ await fetch('/api/users/temp', {
 - [ ] DoD-1: Mapa de Plaza Liberación con nodos como círculos de 150m visibles
 - [ ] DoD-2: Visitante crea alerta → persiste en DB y aparece en mapa/lista
 - [ ] DoD-3: 3 votos acumulan peso ≥ 3 → alerta escala a Nivel 2 automáticamente
-- [ ] DoD-4: Dashboard de coordinador muestra todas las alertas activas (sin auth)
+- [ ] DoD-4: Bandeja de coordinador muestra las alertas de SUS zonas (con sesión; actualizado 2026-11-03)
 - [ ] DoD-5: Coordinador cambia estado → cambio visible sin recargar (Realtime o refresh manual)
 - [ ] DoD-6: Detalle de alerta muestra votos, comentarios y estado actual
 - [ ] DoD-7: Registro de visitante temporal funciona (nickname + idioma)

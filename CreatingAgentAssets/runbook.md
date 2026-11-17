@@ -13,6 +13,8 @@
 | Crear / editar | `zona-seguraa/scripts/**` |
 | Crear / editar | `CreatingAgentAssets/**` |
 | Crear / editar | `.windsurf/**` |
+| Crear / editar | `zona-seguraa/AGENTS.md` |
+| Editar (acotado, con diff y pruebas) | `zona-seguraa/middleware.js` — autorizado por el owner 2026-11-03 para el acceso de coordinación y el bloqueo del modo demo |
 | Editar | `zona-seguraa/package.json` (solo agregar dependencias) |
 | Editar | `zona-seguraa/next.config.mjs` |
 | Editar | `zona-seguraa/jsconfig.json` |
@@ -25,7 +27,7 @@
 - `zona-seguraa/.env.local` — contiene secrets; nunca leer ni escribir.
 - `zona-seguraa/package-lock.json` — solo se modifica vía `npm install`.
 - `.git/` — no manipular directamente.
-- No ejecutar `git commit`, `git push` ni ningún comando git de escritura.
+- No ejecutar `git commit`, `git push` ni ningún comando git de escritura sin confirmación del owner (sí se permiten ramas locales).
 
 ## 2. Base de datos
 
@@ -62,7 +64,9 @@ cd zona-seguraa && npm install <paquete>
 ### Convenciones
 - 1 route handler = 1 carpeta en `src/app/api/`.
 - Exportar funciones nombradas: `GET`, `POST`, `PATCH`, `DELETE`.
-- Validar payloads con funciones puras en `lib/validators/`.
+- Validar payloads con funciones puras (`src/lib/signalarm/domain.js`).
+- Identidad y rol desde la sesión (`src/lib/signalarm/actor.js`), nunca del cuerpo.
+- Autorizar cada operación en el servidor; recurso de otra zona → 404.
 - Responder siempre con `NextResponse.json({ data, error }, { status })`.
 - Logs estructurados: `console.info('[ruta.método]', { campos_relevantes })`.
 
@@ -79,9 +83,14 @@ cd zona-seguraa && npm install <paquete>
 
 ### Permitido ejecutar
 ```bash
-npm run lint          # ESLint
-npm run build         # Verificar build
-npm run dev           # Dev server local
+npm run lint                              # ESLint
+npm run build                             # Verificar build
+npm run dev                               # Dev server local
+node --test scripts/tests/*.test.mjs      # Unitarias y middleware (sin dependencias)
+node scripts/smoke-api.mjs                # Humo HTTP contra servidor LOCAL en modo demo
+node scripts/e2e-recorrido.mjs            # Recorrido en navegador, dos sesiones de coordinación (LOCAL, demo; Playwright global)
+node scripts/fixtures/generate-events-v1.mjs "$PWD"   # Regenera fixtures de eventos v1 (deterministas)
+../CreatingAgentAssets/db/tests/run-local.sh   # SQL contra PostgreSQL LOCAL desechable
 ```
 
 ### Smoke tests
@@ -96,11 +105,11 @@ npm run dev           # Dev server local
 3. Solo entonces se implementa en código.
 4. El contrato queda versionado en git para sincronización.
 
-## 8. Demo Mode
-- Script en `zona-seguraa/scripts/demo-mode.js`.
-- Simula flujo completo (registro → SOS → votos → escalada → resolución).
-- Usar como fallback si hardware IoT no está disponible.
-- Mantener sincronizado con API routes reales.
+## 8. Modo demo (actualizado 2026-11-03)
+- Se activa solo con `NEXT_PUBLIC_SIGNALARM_DATA_MODE=demo` + `SIGNALARM_DEMO_SECRET` (≥ 32 caracteres).
+- Datos en memoria y personas ficticias. Aviso visible en todas las páginas.
+- Bloqueado fuera de local (Host no local o Vercel → 503). No es respaldo de fallos del modo real.
+- No hay escalamiento automático por votos. El antiguo `demo-mode.js` no existe.
 
 ## 9. Comandos prohibidos para el agente
 - `git commit`, `git push`, `git merge`, `git rebase`

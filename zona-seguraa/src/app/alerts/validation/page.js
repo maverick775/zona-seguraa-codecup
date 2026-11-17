@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase'
+import { createRealtimeClient } from '@/lib/supabase'
+import { DEMO_SCENARIO } from '@/lib/signalarm/config'
 
-const ZONE_ID = 'a1000000-0000-0000-0000-000000000001'
+const ZONE_ID = DEMO_SCENARIO.defaultZoneId
 
 const typeLabels = {
   medical: 'Emergencia Médica',
@@ -38,7 +39,8 @@ export default function AlertValidationPage() {
 
   useEffect(() => {
     fetchAlerts()
-    const supabase = createClient()
+    const supabase = createRealtimeClient()
+    if (!supabase) return
     const channel = supabase
       .channel('validation-alerts')
       .on(

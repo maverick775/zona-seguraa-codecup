@@ -1,0 +1,19 @@
+{
+  "spec_version": "1.0",
+  "contract": "signalarm.events",
+  "contract_version": "1.0.0",
+  "occurred_at": "2026-11-03T18:05:00Z",
+  "source": "fixture:fake-gateway",
+  "id": "f1000000-0000-4000-8000-000000000002",
+  "type": "device.command.requested",
+  "subject": {
+    "kind": "device",
+    "id": "b1000000-0000-0000-0000-000000000002"
+  },
+  "data": {
+    "device_kind": "avp_simulated",
+    "command": "siren_test_silent",
+    "request_id": "f1000000-0000-4000-8000-0000000000aa",
+    "fixture_only": true
+  }
+}

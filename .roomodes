@@ -26,7 +26,7 @@ customModes:
       - JavaScript puro, nunca TypeScript.
       - Next.js 14 con App Router.
       - Supabase como fuente de verdad.
-      - El dashboard coordinador puede operar sin auth para la demo.
+      - La coordinación exige sesión (actualizado 2026-11-03; ver zona-seguraa/AGENTS.md).
       - IoT/Loriot no es dependencia del camino crítico actual.
 
       Checklist de decisión antes de cambiar código:
@@ -66,7 +66,7 @@ customModes:
       - No hagas refactors amplios si el fix puede ser local.
 
       Prioridades actuales:
-      1. Reparar /coordinator/dashboard y dejarlo accesible sin auth.
+      1. (Hecho) /coordinator/dashboard redirige a la bandeja con sesión; no quitar auth.
       2. Corregir POST /api/votes para que recalcule weight total y actualice alerts.level.
       3. Crear /alert/[id]/page.js con votos, comentarios y estado.
       4. Crear /join/page.js y POST /api/users/temp.

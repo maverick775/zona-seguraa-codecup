@@ -14,6 +14,9 @@
 - **Architect mode:** cambios de schema, nuevas entidades, refactors grandes
 - **Ask mode:** dudas sobre reglas de negocio, escalada de alertas, flujo de coordinadores
 
+## Seguridad (2026-11-03)
+Ver `zona-seguraa/AGENTS.md` § Seguridad: la coordinación exige sesión; no quitar middleware.
+
 ## Never do
 - Instalar nuevas dependencias sin confirmar
 - Crear archivos `.ts` o `.tsx`

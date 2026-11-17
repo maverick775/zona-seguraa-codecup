@@ -1,0 +1,23 @@
+{
+  "spec_version": "1.0",
+  "contract": "signalarm.events",
+  "contract_version": "1.0.0",
+  "id": "3da97f09-0989-58f5-8cfc-21820473913c",
+  "type": "report.dismissed",
+  "source": "signalarm-core",
+  "occurred_at": "2026-11-03T18:24:00.000Z",
+  "subject": {
+    "kind": "report",
+    "id": "e4a0c0de-0000-4000-8000-000000000004"
+  },
+  "sequence": 2,
+  "zone_id": "a1000000-0000-0000-0000-000000000001",
+  "data": {
+    "level": 0,
+    "report_type": "evacuation",
+    "status_from": "active",
+    "status_to": "false_alarm",
+    "actor_role": "coordinator",
+    "dismiss_reason": "duplicate"
+  }
+}

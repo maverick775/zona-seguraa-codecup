@@ -143,6 +143,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE nodes;
 ALTER PUBLICATION supabase_realtime ADD TABLE alert_votes;
 ```
 
+## Migraciones propuestas (pendientes de aprobación)
+| Archivo | Estado | Qué hace |
+|---|---|---|
+| `migrations/001_n0_reports.sql` (+ `.down.sql`) | **Propuesta, no aplicada en ningún Supabase** | `alerts.level` 0–3 (N0), `created_by`, `client_report_id` único por usuario, `resolution`, `dismiss_reason`, `version`; tablas `alert_events` (solo inserción) y `coordinator_zones`; RPC `create_n0_report` y `transition_alert` solo para `service_role` |
+
+Pruebas locales: `PGHOST=/socket PGPORT=5432 CreatingAgentAssets/db/tests/run-local.sh` (solo PostgreSQL local y desechable).
+El SQL de arriba sigue describiendo el esquema **antes** de 001.
+
 ## Reglas de mantenimiento
 - **Agregar columna:** actualizar este archivo → actualizar `seederZS.txt` → actualizar contratos afectados → purgar y recrear.
 - **Enum values:** si se agrega tipo de alerta o rol, actualizar CHECK constraints aquí y en `zona-seguraa/src/lib/validators.js`.
